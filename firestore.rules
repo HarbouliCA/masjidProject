@@ -1,0 +1,63 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function auth_()    { return request.auth != null; }
+    function role()     { return request.auth.token.role; }
+    function isAdmin()  { return auth_() && role() == 'admin'; }
+    function isFinance(){ return auth_() && role() in ['admin', 'treasurer']; }
+    function isStaff()  { return auth_() && role() in ['admin', 'treasurer', 'teacher']; }
+    function myFamily() { return request.auth.token.familyId; }
+
+    match /users/{uid} {
+      allow read:  if auth_() && (request.auth.uid == uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // community directory
+    match /persons/{id}   { allow read: if isStaff();  allow write: if isAdmin(); }
+
+    // masjid pledges — finance only (dignity of members)
+    match /members/{id}       { allow read: if isStaff();   allow write: if isFinance(); }
+    match /pledgeMonths/{id}  { allow read: if isFinance(); allow write: if isFinance(); }
+
+    match /families/{id} {
+      allow read:  if isStaff() || (auth_() && myFamily() == id);
+      allow write: if isAdmin();
+    }
+    match /students/{id} {
+      allow read:  if isStaff() || (auth_() && resource.data.familyId == myFamily());
+      allow write: if isAdmin();
+    }
+    match /invoices/{id} {
+      allow read:  if isFinance() || (auth_() && resource.data.familyId == myFamily());
+      allow write: if isFinance();
+    }
+    match /payments/{id} {
+      // v2.0.1 fix: earlier draft contained a corrupted expression (`id / 0`).
+      // Implemented as family-claim equality: finance always; parents only their own.
+      allow read:   if isFinance() || (auth_() && request.auth.token.familyId == resource.data.familyId);
+      allow create: if isFinance();
+      allow update, delete: if false;      // append-only; corrections = new doc
+    }
+    match /donations/{id}      { allow read: if isFinance(); allow write: if isFinance(); }
+    match /funds/{id}          { allow read: if isStaff();   allow write: if isFinance(); }
+    match /campaigns/{id}      { allow read: if auth_();     allow write: if isFinance(); }
+    match /recurringExpenses/{id} { allow read: if isStaff(); allow write: if isFinance(); }
+    match /vendors/{id}        { allow read: if isStaff();   allow write: if isFinance(); }
+    match /transfers/{id}      { allow read: if isFinance(); allow create: if isFinance();
+                                 allow update, delete: if false; }
+    match /grades/{id} {
+      allow read:  if isStaff() || (auth_() && resource.data.familyId == myFamily());
+      allow write: if isStaff();
+    }
+    match /expenses/{id}  { allow read: if isStaff();   allow write: if isFinance(); }
+    match /teachers/{id}  { allow read: if isStaff();   allow write: if isAdmin(); }
+    match /salaryPayments/{id} { allow read: if isFinance(); allow write: if isFinance(); }
+    match /events/{id}        { allow read: if auth_();  allow write: if isStaff(); }
+    match /announcements/{id} { allow read: if auth_();  allow write: if isStaff(); }
+    match /prayerTimes/{id}   { allow read: if true;     allow write: if false; }
+    match /auditLog/{id}      { allow read: if isAdmin(); allow write: if false; }
+
+    match /{document=**} { allow read, write: if false; }
+  }
+}

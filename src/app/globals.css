@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/* Brand tokens — plan §4 palette. Gold is accent, never background. */
+@theme {
+  --color-nour-green-900: #06291b;
+  --color-nour-green-800: #0b3a26;
+  --color-nour-green-700: #2c4536;
+  --color-nour-gold-500: #a69160;
+  --color-nour-gold-600: #977033;
+  --color-nour-gold-300: #d2caaf;
+  --color-nour-cream-50: #f6f5f2;
+  --color-nour-stone-400: #a6a99d;
+  --color-success: #2f7d53;
+  --color-warning: #b8860b;
+  --color-danger: #8c2f2f;
+}
+
+/* Font stacks (runtime variables from next/font). Arabic first, Latin fallback. */
+@theme inline {
+  --font-sans: var(--font-ibm-plex-arabic), var(--font-cairo), var(--font-inter),
+    sans-serif;
+  --font-heading: var(--font-cairo), var(--font-ibm-plex-arabic), sans-serif;
+  --font-quranic: var(--font-amiri), var(--font-ibm-plex-arabic), serif;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  body {
+    background-color: var(--color-nour-cream-50);
+    color: var(--color-nour-green-900);
+    font-family: var(--font-sans);
+  }
+
+  /* Arabic must never be letter-spaced; scope tracking to Latin-only if needed. */
+  .latin {
+    font-family: var(--font-inter), sans-serif;
+  }
+
+  .dark body {
+    background-color: var(--color-nour-green-900);
+    color: var(--color-nour-cream-50);
+  }
+}
