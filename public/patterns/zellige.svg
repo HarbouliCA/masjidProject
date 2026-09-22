@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
+  <g fill="none" stroke="#CFCBC0" stroke-width="1" opacity="0.35">
+    <rect x="-60" y="-60" width="120" height="120" />
+    <rect x="60" y="-60" width="120" height="120" />
+    <rect x="180" y="-60" width="120" height="120" />
+    <rect x="-60" y="60" width="120" height="120" />
+    <rect x="60" y="60" width="120" height="120" />
+    <rect x="180" y="60" width="120" height="120" />
+    <rect x="-60" y="180" width="120" height="120" />
+    <rect x="60" y="180" width="120" height="120" />
+    <rect x="180" y="180" width="120" height="120" />
+    <rect x="-60" y="-60" width="120" height="120" transform="rotate(45 0 0)" />
+    <rect x="60" y="-60" width="120" height="120" transform="rotate(45 120 0)" />
+    <rect x="180" y="-60" width="120" height="120" transform="rotate(45 240 0)" />
+    <rect x="-60" y="60" width="120" height="120" transform="rotate(45 0 120)" />
+    <rect x="60" y="60" width="120" height="120" transform="rotate(45 120 120)" />
+    <rect x="180" y="60" width="120" height="120" transform="rotate(45 240 120)" />
+    <rect x="-60" y="180" width="120" height="120" transform="rotate(45 0 240)" />
+    <rect x="60" y="180" width="120" height="120" transform="rotate(45 120 240)" />
+    <rect x="180" y="180" width="120" height="120" transform="rotate(45 240 240)" />
+  </g>
+</svg>

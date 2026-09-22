@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { IBM_Plex_Sans_Arabic, Cairo, Amiri, Inter } from "next/font/google";
 import "./globals.css";
-import { getLocale, dirFor } from "@/i18n";
+import { isLocale, dirFor, DEFAULT_LOCALE, type Locale } from "@/i18n";
 
 const ibmPlexArabic = IBM_Plex_Sans_Arabic({
   variable: "--font-ibm-plex-arabic",
@@ -35,10 +36,12 @@ export const metadata: Metadata = {
     "منصة المسجد والمدرسة — دفتر واحد، سجل واحد | Mezquita y escuela en una sola plataforma",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const locale = getLocale();
+  const cookieStore = await cookies();
+  const raw = cookieStore.get("NEXT_LOCALE")?.value;
+  const locale: Locale = raw && isLocale(raw) ? raw : DEFAULT_LOCALE;
   const dir = dirFor(locale);
 
   return (

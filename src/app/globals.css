@@ -1,46 +1,103 @@
 @import "tailwindcss";
 
-/* Brand tokens — plan §4 palette. Gold is accent, never background. */
+/* Class-based dark mode (toggle adds `.dark` on <html>). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Static brand tokens (Moroccan/Andalusian identity). */
 @theme {
-  --color-nour-green-900: #06291b;
-  --color-nour-green-800: #0b3a26;
-  --color-nour-green-700: #2c4536;
-  --color-nour-gold-500: #a69160;
-  --color-nour-gold-600: #977033;
-  --color-nour-gold-300: #d2caaf;
-  --color-nour-cream-50: #f6f5f2;
-  --color-nour-stone-400: #a6a99d;
+  --color-nour-green-900: #063f2b;
+  --color-nour-green-800: #0b4a36;
+  --color-nour-green-700: #2e5a48;
+  --color-nour-gold-500: #d4a72c;
+  --color-nour-gold-600: #b88e1f;
+  --color-nour-gold-300: #e9ddb2;
+  --color-nour-cream-50: #f8f7f2;
+  --color-nour-stone-400: #9c9a90;
   --color-success: #2f7d53;
   --color-warning: #b8860b;
   --color-danger: #8c2f2f;
 }
 
-/* Font stacks (runtime variables from next/font). Arabic first, Latin fallback. */
+/*
+ * Semantic, theme-aware tokens. These resolve to runtime CSS variables, so
+ * utilities like bg-surface / text-foreground / border-border / bg-primary
+ * automatically switch between light and dark.
+ */
 @theme inline {
   --font-sans: var(--font-ibm-plex-arabic), var(--font-cairo), var(--font-inter),
     sans-serif;
   --font-heading: var(--font-cairo), var(--font-ibm-plex-arabic), sans-serif;
   --font-quranic: var(--font-amiri), var(--font-ibm-plex-arabic), serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
 }
 
 @layer base {
   :root {
     color-scheme: light;
+    --brand-green: #063f2b;
+    --brand-gold: #d4a72c;
+    --brand-ivory: #f8f7f2;
+    --brand-pattern: #e3e1d8;
+    --brand-white: #ffffff;
+
+    --background: #f8f7f2;
+    --foreground: #063f2b;
+    --surface: #ffffff;
+    --surface-hover: #f1efe8;
+    --border: #e5e2d8;
+    --muted: #9c9a90;
+    --primary: #063f2b;
+    --primary-foreground: #ffffff;
+    --accent: #d4a72c;
+
+    --zellige-color: #cfcbc0;
+    --zellige-opacity: 0.35;
+    --zellige-image: url("/patterns/zellige.svg");
+  }
+
+  .dark {
+    color-scheme: dark;
+    --background: #064b38;
+    --foreground: #f0f5f2;
+    --surface: #0a563f;
+    --surface-hover: #0d6148;
+    --border: #1e6b52;
+    --muted: #a8c4b8;
+    --primary: #d4a72c;
+    --primary-foreground: #063f2b;
+    --accent: #d4a72c;
+
+    --zellige-color: #c8ddd4;
+    --zellige-opacity: 0.12;
+    --zellige-image: url("/patterns/zellige-dark.svg");
   }
 
   body {
-    background-color: var(--color-nour-cream-50);
-    color: var(--color-nour-green-900);
+    background-color: var(--background);
+    color: var(--foreground);
     font-family: var(--font-sans);
+  }
+
+  /*
+   * Zellige background — light mode: ivory + darker beige lines; dark mode:
+   * deep green + lighter green lines. The image switches via --zellige-image.
+   */
+  .zellige-background {
+    background-color: var(--background);
+    background-image: var(--zellige-image);
+    background-repeat: repeat;
+    background-size: 240px 240px;
   }
 
   /* Arabic must never be letter-spaced; scope tracking to Latin-only if needed. */
   .latin {
     font-family: var(--font-inter), sans-serif;
-  }
-
-  .dark body {
-    background-color: var(--color-nour-green-900);
-    color: var(--color-nour-cream-50);
   }
 }

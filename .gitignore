@@ -40,6 +40,9 @@ yarn-error.log*
 # Source-of-truth workbooks — real financial/personal data, kept out of git
 *.xlsx
 
+# Migration report output — contains real data
+migration-report.json
+
 # vercel
 .vercel
 
