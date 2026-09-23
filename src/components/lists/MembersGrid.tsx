@@ -93,15 +93,17 @@ export function MembersGrid({ t }: { t: Dictionary }) {
           setEditingMember(member);
           setFormOpen(true);
         }}
-        onCellClick={(rowId, cell) => {
+        onCellClick={(rowId, cell, monthKey) => {
           const member = members.find((m) => m.id === rowId);
           setContext({
             rowLabel: member?.fullName ?? rowId,
             monthLabel:
-              MASJID_GRID_MONTHS.find((m) => m.key === cell.month)?.label ??
-              cell.month,
-            expectedCents: cell.expectedCents,
-            obligationId: cell.obligationId,
+              MASJID_GRID_MONTHS.find((m) => m.key === monthKey)?.label ??
+              monthKey,
+            monthKey: monthKey,
+            expectedCents: cell ? cell.expectedCents : (member?.monthlyPledgeCents ?? 1000),
+            currentPaidCents: cell?.paidCents ?? 0,
+            obligationId: cell?.obligationId ?? "",
             againstType: "pledgeMonth",
             scope: "masjid",
             memberId: rowId,

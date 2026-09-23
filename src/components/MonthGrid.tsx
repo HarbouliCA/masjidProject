@@ -39,7 +39,7 @@ export function MonthGrid({
   months: { key: string; label: string }[];
   rows: MonthGridRow[];
   labelHeader: string;
-  onCellClick?: (rowId: string, cell: MonthCell) => void;
+  onCellClick?: (rowId: string, cell: MonthCell | null, monthKey: string) => void;
   onLabelClick?: (rowId: string) => void;
 }) {
   return (
@@ -87,7 +87,13 @@ export function MonthGrid({
                       key={m.key}
                       className="px-2 py-2 text-center text-nour-stone-400"
                     >
-                      ·
+                      <button
+                        type="button"
+                        onClick={() => onCellClick?.(row.id, null, m.key)}
+                        className="inline-block min-w-[3.5rem] rounded px-2 py-1 tabular-nums hover:bg-nour-gold-300/10 dark:hover:bg-nour-green-700"
+                      >
+                        ·
+                      </button>
                     </td>
                   );
                 }
@@ -100,7 +106,7 @@ export function MonthGrid({
                   <td key={m.key} className="px-2 py-2 text-center">
                     <button
                       type="button"
-                      onClick={() => onCellClick?.(row.id, cell)}
+                      onClick={() => onCellClick?.(row.id, cell, m.key)}
                       className={`inline-block min-w-[3.5rem] rounded px-2 py-1 tabular-nums ${statusClass[status]}`}
                     >
                       {cell.paidCents > 0 ? (

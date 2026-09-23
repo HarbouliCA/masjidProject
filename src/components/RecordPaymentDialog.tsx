@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { getFirestoreDb } from "@/lib/firestore/client";
+import { stripUndefined } from "@/lib/sanitize";
 import { recordPayment, type PaymentMethod } from "@/lib/mutations";
 import type { Dictionary } from "@/i18n";
 import type { Cents, Scope } from "@/lib/schema";
@@ -9,7 +12,9 @@ import type { Cents, Scope } from "@/lib/schema";
 export interface PaymentContext {
   rowLabel: string;
   monthLabel: string;
+  monthKey: string;
   expectedCents: Cents;
+  currentPaidCents: Cents;
   obligationId: string;
   againstType: "invoice" | "pledgeMonth";
   scope: Scope;
@@ -34,7 +39,8 @@ export function RecordPaymentDialog({
 
   useEffect(() => {
     if (context) {
-      setAmount((context.expectedCents / 100).toString());
+      const prefillCents = context.currentPaidCents > 0 ? context.currentPaidCents : context.expectedCents;
+      setAmount((prefillCents / 100).toString());
       setError("");
     }
   }, [context]);
@@ -44,24 +50,77 @@ export function RecordPaymentDialog({
 
   async function submit() {
     const cents = Math.round(Number(amount) * 100);
-    if (!Number.isFinite(cents) || cents <= 0) {
+    if (!Number.isFinite(cents) || cents < 0) {
       setError(t.error);
       return;
     }
     setSaving(true);
-    await recordPayment({
-      scope: ctx.scope,
-      againstType: ctx.againstType,
-      againstId: ctx.obligationId,
-      familyId: ctx.familyId,
-      memberId: ctx.memberId,
-      amountCents: cents,
-      method,
-      receivedByUid: "current-user",
-    });
-    queryClient.invalidateQueries();
-    setSaving(false);
-    onClose();
+    
+    try {
+      const db = getFirestoreDb();
+      if (db) {
+        let obId = ctx.obligationId;
+
+        if (ctx.againstType === "pledgeMonth") {
+          if (!obId) obId = `pm-${ctx.memberId}-${ctx.monthKey}`;
+          const pmRef = doc(db, "pledgeMonths", obId);
+          const pmSnap = await getDoc(pmRef);
+          if (pmSnap.exists()) {
+            await updateDoc(pmRef, { paidCents: cents });
+          } else {
+            await setDoc(pmRef, stripUndefined({
+              memberId: ctx.memberId,
+              month: ctx.monthKey,
+              expectedCents: ctx.expectedCents,
+              paidCents: cents,
+              status: "partial", 
+              notes: ""
+            }));
+          }
+        } else if (ctx.againstType === "invoice") {
+          if (!obId) obId = `invoice-${ctx.familyId}-${ctx.monthKey}`;
+          const invRef = doc(db, "invoices", obId);
+          const invSnap = await getDoc(invRef);
+          if (invSnap.exists()) {
+            await updateDoc(invRef, { paidCents: cents });
+          } else {
+            await setDoc(invRef, stripUndefined({
+              familyId: ctx.familyId,
+              academicYearId: "2025-2026",
+              month: ctx.monthKey,
+              arabicChildren: 0,
+              arabicFeeCents: 0,
+              englishChildren: 0,
+              englishFeeCents: 0,
+              totalCents: ctx.expectedCents,
+              paidCents: cents,
+              status: "partial",
+              isManualOverride: false,
+              notes: ""
+            }));
+          }
+        }
+
+        if (cents > 0) {
+          await recordPayment({
+            scope: ctx.scope,
+            againstType: ctx.againstType,
+            againstId: obId,
+            familyId: ctx.familyId,
+            memberId: ctx.memberId,
+            amountCents: cents,
+            method,
+            receivedByUid: "current-user",
+          });
+        }
+      }
+      queryClient.invalidateQueries();
+      onClose();
+    } catch (e) {
+      setError(t.error);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (

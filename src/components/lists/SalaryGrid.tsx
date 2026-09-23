@@ -31,15 +31,17 @@ export function SalaryGrid({ t }: { t: Dictionary }) {
         months={SCHOOL_GRID_MONTHS}
         rows={rows}
         labelHeader={t.teacher}
-        onCellClick={(rowId, cell) => {
+        onCellClick={(rowId, cell, monthKey) => {
           const teacher = teachers.find((x) => x.id === rowId);
           setContext({
             rowLabel: teacher?.fullName ?? rowId,
             monthLabel:
-              SCHOOL_GRID_MONTHS.find((m) => m.key === cell.month)?.label ??
-              cell.month,
-            expectedCents: cell.expectedCents,
-            obligationId: cell.obligationId,
+              SCHOOL_GRID_MONTHS.find((m) => m.key === monthKey)?.label ??
+              monthKey,
+            monthKey: monthKey,
+            expectedCents: cell ? cell.expectedCents : 0,
+            currentPaidCents: cell?.paidCents ?? 0,
+            obligationId: cell?.obligationId ?? "",
             againstType: "invoice",
             scope: "school",
           });
