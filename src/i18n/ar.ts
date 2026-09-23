@@ -148,6 +148,8 @@ export const ar = {
   roleParent: "ولي أمر",
   roleViewer: "مطلع",
   saved: "تم الحفظ",
+  editSalary: "تعديل راتب",
+  addSalary: "إضافة راتب",
 } as const;
 
 export type TranslationKey = keyof typeof ar;

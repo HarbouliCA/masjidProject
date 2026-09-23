@@ -146,4 +146,6 @@ export const es: Dictionary = {
   roleParent: "Tutor",
   roleViewer: "Lector",
   saved: "Guardado",
+  editSalary: "Editar salario",
+  addSalary: "Añadir salario",
 };

@@ -10,6 +10,7 @@
 import { addDoc, collection, doc, setDoc, updateDoc } from "firebase/firestore";
 import { getFirestoreDb } from "./firestore/client";
 import { deriveObligationStatus } from "./ledger";
+import { stripUndefined } from "./sanitize";
 import type {
   Cents,
   Class,
@@ -46,7 +47,7 @@ export function buildMember(input: MemberInput): Omit<Member, "id"> {
 export async function recordMember(input: MemberInput): Promise<string | null> {
   const db = getFirestoreDb();
   if (!db) return null;
-  const ref = await addDoc(collection(db, "members"), buildMember(input));
+  const ref = await addDoc(collection(db, "members"), stripUndefined(buildMember(input)));
   return ref.id;
 }
 
@@ -56,7 +57,7 @@ export async function updateMember(
 ): Promise<void> {
   const db = getFirestoreDb();
   if (!db) return;
-  await updateDoc(doc(db, "members", id), patch);
+  await updateDoc(doc(db, "members", id), stripUndefined(patch));
 }
 
 export async function archiveMember(id: string): Promise<void> {
@@ -84,7 +85,7 @@ export function buildFamily(input: FamilyInput): Omit<Family, "id"> {
 export async function recordFamily(input: FamilyInput): Promise<string | null> {
   const db = getFirestoreDb();
   if (!db) return null;
-  const ref = await addDoc(collection(db, "families"), buildFamily(input));
+  const ref = await addDoc(collection(db, "families"), stripUndefined(buildFamily(input)));
   return ref.id;
 }
 
@@ -94,7 +95,7 @@ export async function updateFamily(
 ): Promise<void> {
   const db = getFirestoreDb();
   if (!db) return;
-  await updateDoc(doc(db, "families", id), patch);
+  await updateDoc(doc(db, "families", id), stripUndefined(patch));
 }
 
 export async function archiveFamily(id: string): Promise<void> {
@@ -125,7 +126,7 @@ export function buildStudent(input: StudentInput): Omit<Student, "id"> {
 export async function recordStudent(input: StudentInput): Promise<string | null> {
   const db = getFirestoreDb();
   if (!db) return null;
-  const ref = await addDoc(collection(db, "students"), buildStudent(input));
+  const ref = await addDoc(collection(db, "students"), stripUndefined(buildStudent(input)));
   return ref.id;
 }
 
@@ -135,7 +136,7 @@ export async function updateStudent(
 ): Promise<void> {
   const db = getFirestoreDb();
   if (!db) return;
-  await updateDoc(doc(db, "students", id), patch);
+  await updateDoc(doc(db, "students", id), stripUndefined(patch));
 }
 
 export async function assignStudentToClass(id: string, classId: string): Promise<void> {
@@ -166,7 +167,7 @@ export function buildClass(input: ClassInput): Omit<Class, "id"> {
 export async function recordClass(input: ClassInput): Promise<string | null> {
   const db = getFirestoreDb();
   if (!db) return null;
-  const ref = await addDoc(collection(db, "classes"), buildClass(input));
+  const ref = await addDoc(collection(db, "classes"), stripUndefined(buildClass(input)));
   return ref.id;
 }
 
@@ -176,7 +177,7 @@ export async function updateClass(
 ): Promise<void> {
   const db = getFirestoreDb();
   if (!db) return;
-  await updateDoc(doc(db, "classes", id), patch);
+  await updateDoc(doc(db, "classes", id), stripUndefined(patch));
 }
 
 export async function archiveClass(id: string): Promise<void> {
@@ -213,7 +214,7 @@ export function buildTeacher(input: TeacherInput): Omit<Teacher, "id"> {
 export async function recordTeacher(input: TeacherInput): Promise<string | null> {
   const db = getFirestoreDb();
   if (!db) return null;
-  const ref = await addDoc(collection(db, "teachers"), buildTeacher(input));
+  const ref = await addDoc(collection(db, "teachers"), stripUndefined(buildTeacher(input)));
   return ref.id;
 }
 
@@ -223,7 +224,7 @@ export async function updateTeacher(
 ): Promise<void> {
   const db = getFirestoreDb();
   if (!db) return;
-  await updateDoc(doc(db, "teachers", id), patch);
+  await updateDoc(doc(db, "teachers", id), stripUndefined(patch));
 }
 
 export async function archiveTeacher(id: string): Promise<void> {
@@ -268,7 +269,7 @@ export async function upsertSalaryPayment(input: SalaryUpsertInput): Promise<voi
   const db = getFirestoreDb();
   if (!db) return;
   const id = salaryDocId(input.teacherId, input.month);
-  await setDoc(doc(db, "salaryPayments", id), buildSalaryPayment(input));
+  await setDoc(doc(db, "salaryPayments", id), stripUndefined(buildSalaryPayment(input)));
 }
 
 export async function markSalaryPaid(
@@ -289,5 +290,5 @@ export async function markSalaryPaid(
 export async function updateSettings(patch: Partial<Settings>): Promise<void> {
   const db = getFirestoreDb();
   if (!db) return;
-  await setDoc(doc(db, "settings", "organization"), patch, { merge: true });
+  await setDoc(doc(db, "settings", "organization"), stripUndefined(patch), { merge: true });
 }

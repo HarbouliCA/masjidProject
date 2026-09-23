@@ -9,6 +9,7 @@
  */
 import { addDoc, collection } from "firebase/firestore";
 import { getFirestoreDb } from "./firestore/client";
+import { stripUndefined } from "./sanitize";
 import type {
   Cents,
   Donation,
@@ -62,7 +63,7 @@ export function buildPayment(input: PaymentInput): Payment {
 export async function recordPayment(input: PaymentInput): Promise<string | null> {
   const db = getFirestoreDb();
   if (!db) return null;
-  const ref = await addDoc(collection(db, "payments"), buildPayment(input));
+  const ref = await addDoc(collection(db, "payments"), stripUndefined(buildPayment(input)));
   return ref.id;
 }
 
@@ -100,7 +101,7 @@ export function buildDonation(input: DonationInput): Donation {
 export async function recordDonation(input: DonationInput): Promise<string | null> {
   const db = getFirestoreDb();
   if (!db) return null;
-  const ref = await addDoc(collection(db, "donations"), buildDonation(input));
+  const ref = await addDoc(collection(db, "donations"), stripUndefined(buildDonation(input)));
   return ref.id;
 }
 
@@ -131,7 +132,7 @@ export function buildExpense(input: ExpenseInput): Expense {
 export async function recordExpense(input: ExpenseInput): Promise<string | null> {
   const db = getFirestoreDb();
   if (!db) return null;
-  const ref = await addDoc(collection(db, "expenses"), buildExpense(input));
+  const ref = await addDoc(collection(db, "expenses"), stripUndefined(buildExpense(input)));
   return ref.id;
 }
 
@@ -162,7 +163,7 @@ export function buildTransfer(input: TransferInput): Transfer {
 export async function recordTransfer(input: TransferInput): Promise<string | null> {
   const db = getFirestoreDb();
   if (!db) return null;
-  const ref = await addDoc(collection(db, "transfers"), buildTransfer(input));
+  const ref = await addDoc(collection(db, "transfers"), stripUndefined(buildTransfer(input)));
   return ref.id;
 }
 
@@ -194,7 +195,7 @@ export function buildGrade(input: GradeInput): Grade {
 export async function recordGrade(input: GradeInput): Promise<string | null> {
   const db = getFirestoreDb();
   if (!db) return null;
-  const ref = await addDoc(collection(db, "grades"), buildGrade(input));
+  const ref = await addDoc(collection(db, "grades"), stripUndefined(buildGrade(input)));
   return ref.id;
 }
 
@@ -220,7 +221,7 @@ export function buildAttendance(input: AttendanceInput): Attendance {
 export async function recordAttendance(input: AttendanceInput): Promise<string | null> {
   const db = getFirestoreDb();
   if (!db) return null;
-  const ref = await addDoc(collection(db, "attendance"), buildAttendance(input));
+  const ref = await addDoc(collection(db, "attendance"), stripUndefined(buildAttendance(input)));
   return ref.id;
 }
 
@@ -247,7 +248,7 @@ export function buildEvent(input: EventInput): Event {
 export async function recordEvent(input: EventInput): Promise<string | null> {
   const db = getFirestoreDb();
   if (!db) return null;
-  const ref = await addDoc(collection(db, "events"), buildEvent(input));
+  const ref = await addDoc(collection(db, "events"), stripUndefined(buildEvent(input)));
   return ref.id;
 }
 
@@ -271,6 +272,6 @@ export function buildAnnouncement(input: AnnouncementInput): Announcement {
 export async function recordAnnouncement(input: AnnouncementInput): Promise<string | null> {
   const db = getFirestoreDb();
   if (!db) return null;
-  const ref = await addDoc(collection(db, "announcements"), buildAnnouncement(input));
+  const ref = await addDoc(collection(db, "announcements"), stripUndefined(buildAnnouncement(input)));
   return ref.id;
 }

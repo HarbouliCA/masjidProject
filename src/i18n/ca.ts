@@ -146,4 +146,6 @@ export const ca: Dictionary = {
   roleParent: "Tutor",
   roleViewer: "Lector",
   saved: "Desat",
+  editSalary: "Edita salari",
+  addSalary: "Afegeix salari",
 };

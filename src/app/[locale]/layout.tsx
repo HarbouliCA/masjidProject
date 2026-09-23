@@ -4,6 +4,8 @@ import Link from "next/link";
 import { LOCALES, getDictionary, type Locale } from "@/i18n";
 import { Providers } from "@/components/Providers";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { RequireAuth } from "@/components/auth/RequireAuth";
+import { AuthStatus } from "@/components/auth/AuthStatus";
 
 export function generateStaticParams() {
   return LOCALES.map((locale) => ({ locale }));
@@ -51,6 +53,7 @@ export default async function LocaleLayout({
             <p className="font-quranic text-lg" dir="rtl">
               وَقُل رَّبِّ زِدْنِي عِلْمًا
             </p>
+            <AuthStatus t={t} locale={locale} />
             <ThemeToggle t={t} />
           </div>
         </div>
@@ -70,7 +73,9 @@ export default async function LocaleLayout({
         </nav>
       </header>
       <main className="mx-auto max-w-6xl px-6 py-8">
-        <Providers>{children}</Providers>
+        <Providers>
+          <RequireAuth locale={locale}>{children}</RequireAuth>
+        </Providers>
       </main>
     </div>
   );
