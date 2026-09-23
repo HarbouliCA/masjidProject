@@ -1,7 +1,7 @@
 import { getDictionary, type Locale } from "@/i18n";
-import { SchoolManager } from "@/components/lists/SchoolManager";
+import { TeachersManager } from "@/components/lists/TeachersManager";
 
-export default async function SchoolPage({
+export default async function TeachersSalariesPage({
   params,
 }: {
   params: Promise<{ locale: string }>;
@@ -11,8 +11,8 @@ export default async function SchoolPage({
 
   return (
     <section className="space-y-4">
-      <h1 className="font-heading text-xl font-semibold">{t.school}</h1>
-      <SchoolManager t={t} />
+      <h1 className="font-heading text-xl font-semibold">{t.teachers}</h1>
+      <TeachersManager t={t} />
     </section>
   );
 }

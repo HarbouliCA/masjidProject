@@ -34,11 +34,13 @@ export function MonthGrid({
   rows,
   labelHeader,
   onCellClick,
+  onLabelClick,
 }: {
   months: { key: string; label: string }[];
   rows: MonthGridRow[];
   labelHeader: string;
   onCellClick?: (rowId: string, cell: MonthCell) => void;
+  onLabelClick?: (rowId: string) => void;
 }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-nour-gold-300/40 bg-surface">
@@ -65,7 +67,17 @@ export function MonthGrid({
               className="border-b border-nour-gold-300/20 last:border-0"
             >
               <td className="sticky inset-inline-start-0 bg-surface px-4 py-2 font-medium">
-                <span dir="auto">{row.label}</span>
+                {onLabelClick ? (
+                  <button
+                    type="button"
+                    onClick={() => onLabelClick(row.id)}
+                    className="text-start hover:text-nour-gold-600"
+                  >
+                    <span dir="auto">{row.label}</span>
+                  </button>
+                ) : (
+                  <span dir="auto">{row.label}</span>
+                )}
               </td>
               {months.map((m) => {
                 const cell = row.cells.find((c) => c.month === m.key);

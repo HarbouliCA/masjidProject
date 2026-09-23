@@ -4,14 +4,18 @@ import { useState } from "react";
 import { useMembers, usePledgeMonths } from "@/lib/data/hooks";
 import { MonthGrid, type MonthGridRow } from "../MonthGrid";
 import { RecordPaymentDialog, type PaymentContext } from "../RecordPaymentDialog";
+import { MemberForm } from "../MemberForm";
 import { MASJID_GRID_MONTHS } from "@/lib/grid";
 import { exportXLSX } from "@/lib/export";
 import type { Dictionary } from "@/i18n";
+import type { Member } from "@/lib/schema";
 
 export function MembersGrid({ t }: { t: Dictionary }) {
   const { data: members = [] } = useMembers();
   const { data: pledgeMonths = [] } = usePledgeMonths();
   const [context, setContext] = useState<PaymentContext | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
 
   const rows: MonthGridRow[] = members.map((m) => ({
     id: m.id,
@@ -40,7 +44,7 @@ export function MembersGrid({ t }: { t: Dictionary }) {
 
   return (
     <>
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
         <button
           type="button"
           onClick={exportGrid}
@@ -48,11 +52,26 @@ export function MembersGrid({ t }: { t: Dictionary }) {
         >
           {t.export}
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            setEditingMember(null);
+            setFormOpen(true);
+          }}
+          className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground"
+        >
+          {t.add}
+        </button>
       </div>
       <MonthGrid
         months={MASJID_GRID_MONTHS}
         rows={rows}
         labelHeader={t.members}
+        onLabelClick={(rowId) => {
+          const member = members.find((m) => m.id === rowId) ?? null;
+          setEditingMember(member);
+          setFormOpen(true);
+        }}
         onCellClick={(rowId, cell) => {
           const member = members.find((m) => m.id === rowId);
           setContext({
@@ -72,6 +91,12 @@ export function MembersGrid({ t }: { t: Dictionary }) {
         t={t}
         context={context}
         onClose={() => setContext(null)}
+      />
+      <MemberForm
+        t={t}
+        open={formOpen}
+        member={editingMember}
+        onClose={() => setFormOpen(false)}
       />
     </>
   );

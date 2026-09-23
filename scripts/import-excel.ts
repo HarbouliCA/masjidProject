@@ -7,12 +7,20 @@
  *
  * Usage:
  *   npx tsx scripts/import-excel.ts                 # dry run (default)
+ *   npx tsx scripts/import-excel.ts --write         # seed Firestore (idempotent upsert)
  *   npx tsx scripts/import-excel.ts --shart-mode pledged
+ *
+ * --write uses the Admin SDK (GOOGLE_APPLICATION_CREDENTIALS or
+ * FIREBASE_SERVICE_ACCOUNT) and upserts by deterministic document id, so it is
+ * safe to re-run.
  */
 import { readWorkbook, readRows, serialToISO, toInt, toMoneyCents, cleanArabic, type Row } from "../src/lib/excel";
 import { matchNames } from "../src/lib/matching";
+import { ORGANIZATION } from "../src/lib/organization";
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { initializeApp, cert } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 import type {
   Cents,
   Donation,
@@ -403,8 +411,72 @@ function classifyExpense(notes: string): Expense["category"] {
   return "other";
 }
 
+// --- Firestore write (--write) --------------------------------------------
+function stripUndefined(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(stripUndefined);
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (v !== undefined) out[k] = stripUndefined(v);
+    }
+    return out;
+  }
+  return value;
+}
+
+function writeToFirestore(
+  school: ReturnType<typeof parseSchool>,
+  masjid: ReturnType<typeof parseMasjid>
+): Promise<void> {
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
+  const app = raw
+    ? initializeApp({ credential: cert(JSON.parse(raw)) })
+    : initializeApp(); // Application Default Credentials
+  const db = getFirestore(app);
+
+  async function put(col: string, docs: { id: string }[]) {
+    let batch = db.batch();
+    let count = 0;
+    const commits: Promise<unknown>[] = [];
+    for (const d of docs) {
+      const { id, ...data } = d;
+      batch.set(db.collection(col).doc(id), stripUndefined(data));
+      count++;
+      if (count >= 400) {
+        commits.push(batch.commit());
+        batch = db.batch();
+        count = 0;
+      }
+    }
+    if (count > 0) commits.push(batch.commit());
+    await Promise.all(commits);
+  }
+
+  return (async () => {
+    await put("members", masjid.members);
+    await put("pledgeMonths", masjid.pledgeMonths);
+    await put("donations", masjid.donations);
+    await put("families", school.familyList);
+    await put("students", [...school.students, ...school.reservedStudents]);
+    await put("invoices", school.invoices);
+    await put("expenses", [...masjid.masjidExpenses, ...school.expenses]);
+    await put("transfers", school.transfers);
+
+    await db.collection("settings").doc("organization").set({
+      pricing: school.pricing,
+      organization: {
+        iban: ORGANIZATION.iban,
+        titular: ORGANIZATION.titular,
+        concepto: ORGANIZATION.concepto,
+        fiscalYear: "2026",
+        openingBalances: { masjid: 0, school: school.collectedTotal },
+      },
+    });
+  })();
+}
+
 // --- Main --------------------------------------------------------------------
-function main() {
+async function main() {
   const school = parseSchool();
   const masjid = parseMasjid();
 
@@ -457,6 +529,15 @@ function main() {
   console.log(`Wrote ${outPath}`);
   console.log(JSON.stringify(report.reconciliation, null, 2));
   console.log(`\nvariances: ${report.variances.length} · needsReview: ${report.needsReview.length} · persons proposed: ${personsMatches.length}`);
+
+  if (!DRY_RUN) {
+    console.log("\nWriting to Firestore (--write)…");
+    await writeToFirestore(school, masjid);
+    console.log("Firestore write complete.");
+  }
 }
 
-main();
+main().catch((e) => {
+  console.error("Import failed:", e);
+  process.exit(1);
+});

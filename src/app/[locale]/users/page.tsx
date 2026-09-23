@@ -1,8 +1,8 @@
 import { getDictionary, type Locale } from "@/i18n";
 import { RequireRole } from "@/components/auth/RequireRole";
-import { SettingsForm } from "@/components/SettingsForm";
+import { UsersManager } from "@/components/lists/UsersManager";
 
-export default async function SettingsPage({
+export default async function UsersPage({
   params,
 }: {
   params: Promise<{ locale: string }>;
@@ -12,9 +12,9 @@ export default async function SettingsPage({
 
   return (
     <section className="space-y-4">
-      <h1 className="font-heading text-xl font-semibold">{t.settings}</h1>
+      <h1 className="font-heading text-xl font-semibold">{t.users}</h1>
       <RequireRole roles={["admin"]}>
-        <SettingsForm t={t} />
+        <UsersManager t={t} />
       </RequireRole>
     </section>
   );

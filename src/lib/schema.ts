@@ -219,16 +219,19 @@ export interface Family {
   phone?: string;
   email?: string;
   reserved?: boolean;
+  isActive?: boolean;
   notes: string;
 }
 
 export interface Student {
   id: string;
   familyId: string;
+  classId?: string;
   name: string;
   level: string;
   englishEnrolled: boolean;
   reserved?: boolean;
+  isActive?: boolean;
 }
 
 export interface Settings {
@@ -251,6 +254,7 @@ export interface Class {
   id: string;
   name: string; // e.g. "المستوى الأول"
   teacherId?: string;
+  isActive?: boolean;
   notes: string;
 }
 
@@ -259,6 +263,9 @@ export interface Teacher {
   personId?: string;
   fullName: string;
   phone?: string;
+  email?: string;
+  monthlySalaryCents?: Cents;
+  isActive?: boolean;
   notes: string;
 }
 
@@ -291,6 +298,7 @@ export interface SalaryPayment {
   expectedCents: Cents;
   paidCents: Cents;
   status: "unpaid" | "partial" | "paid" | "waived";
+  paidAt?: string;
   notes: string;
 }
 
@@ -326,9 +334,20 @@ export interface Announcement {
 export interface AuditLog {
   id: string;
   action: string;
-  who: string;
   what: string;
+  who: string;
   before?: string;
   after?: string;
   at: string;
+}
+
+export type UserRole = "admin" | "treasurer" | "teacher" | "parent" | "viewer";
+
+export interface UserProfile {
+  id: string; // Firebase Auth uid
+  email: string;
+  role: UserRole;
+  familyId?: string;
+  memberId?: string;
+  disabled?: boolean;
 }

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { getFirestoreDb } from "../firestore/client";
-import type { Family, Student, Member, PledgeMonth, Invoice, Donation, Expense, Transfer, Payment, Grade, Attendance, Class, Teacher, SalaryPayment, Event, PrayerTime, Announcement, AuditLog } from "../schema";
+import type { Family, Student, Member, PledgeMonth, Invoice, Donation, Expense, Transfer, Payment, Grade, Attendance, Class, Teacher, SalaryPayment, Event, PrayerTime, Announcement, AuditLog, Settings } from "../schema";
 
 export type DirectoryKind = "families" | "students" | "members";
 
@@ -102,4 +102,17 @@ export function useAnnouncements() {
 
 export function useAuditLog() {
   return useCollection<AuditLog>("auditLog");
+}
+
+/** Single-document settings (settings/organization). */
+export function useSettings() {
+  return useQuery({
+    queryKey: ["settings"],
+    queryFn: async (): Promise<Settings | null> => {
+      const db = getFirestoreDb();
+      if (!db) return null;
+      const snap = await getDoc(doc(db, "settings", "organization"));
+      return snap.exists() ? (snap.data() as Settings) : null;
+    },
+  });
 }
