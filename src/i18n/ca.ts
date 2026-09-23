@@ -148,4 +148,13 @@ export const ca: Dictionary = {
   saved: "Desat",
   editSalary: "Edita salari",
   addSalary: "Afegeix salari",
+  classLevel: "Nivell de la classe",
+  confirmDelete: "Segur que vols eliminar?",
+  saving: "Desant…",
+  saveError: "No s'ha pogut desar. Torna-ho a provar.",
+  showArchived: "Mostra arxivats",
+  hideArchived: "Amaga arxivats",
+  unarchive: "Restaura",
+  permanentDelete: "Elimina definitivament",
+  confirmPermanentDelete: "Segur que vols eliminar definitivament? Aquesta acció no es pot desfer.",
 };

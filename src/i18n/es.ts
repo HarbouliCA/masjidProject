@@ -148,4 +148,13 @@ export const es: Dictionary = {
   saved: "Guardado",
   editSalary: "Editar salario",
   addSalary: "Añadir salario",
+  classLevel: "Nivel de la clase",
+  confirmDelete: "¿Seguro que quieres eliminar?",
+  saving: "Guardando…",
+  saveError: "No se pudo guardar. Inténtalo de nuevo.",
+  showArchived: "Mostrar archivados",
+  hideArchived: "Ocultar archivados",
+  unarchive: "Restaurar",
+  permanentDelete: "Eliminar definitivamente",
+  confirmPermanentDelete: "¿Seguro que quieres eliminar definitivamente? Esta acción no se puede deshacer.",
 };

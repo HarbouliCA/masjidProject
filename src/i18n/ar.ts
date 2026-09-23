@@ -150,6 +150,15 @@ export const ar = {
   saved: "تم الحفظ",
   editSalary: "تعديل راتب",
   addSalary: "إضافة راتب",
+  classLevel: "مستوى الفصل",
+  confirmDelete: "هل أنت متأكد من الحذف؟",
+  saving: "جارٍ الحفظ…",
+  saveError: "تعذر الحفظ. يرجى المحاولة مرة أخرى.",
+  showArchived: "عرض المؤرشف",
+  hideArchived: "إخفاء المؤرشف",
+  unarchive: "استعادة",
+  permanentDelete: "حذف نهائي",
+  confirmPermanentDelete: "هل أنت متأكد من الحذف النهائي؟ لا يمكن التراجع عن هذا الإجراء.",
 } as const;
 
 export type TranslationKey = keyof typeof ar;

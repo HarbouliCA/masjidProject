@@ -252,7 +252,8 @@ export interface Settings {
 
 export interface Class {
   id: string;
-  name: string; // e.g. "المستوى الأول"
+  name: string; // اسم الفصل
+  level?: string; // مستوى الفصل
   teacherId?: string;
   isActive?: boolean;
   notes: string;

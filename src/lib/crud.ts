@@ -7,7 +7,7 @@
  * `id` field, `record*` uses `addDoc` (the hook maps `d.id` back in), and
  * `update*` target the document by its Firestore id.
  */
-import { addDoc, collection, doc, setDoc, updateDoc } from "firebase/firestore";
+import { addDoc, collection, doc, setDoc, updateDoc, deleteField, deleteDoc } from "firebase/firestore";
 import { getFirestoreDb } from "./firestore/client";
 import { deriveObligationStatus } from "./ledger";
 import { stripUndefined } from "./sanitize";
@@ -64,6 +64,16 @@ export async function archiveMember(id: string): Promise<void> {
   await updateMember(id, { isActive: false });
 }
 
+export async function unarchiveMember(id: string): Promise<void> {
+  await updateMember(id, { isActive: true });
+}
+
+export async function deleteMemberPermanent(id: string): Promise<void> {
+  const db = getFirestoreDb();
+  if (!db) return;
+  await deleteDoc(doc(db, "members", id));
+}
+
 // --- Families --------------------------------------------------------------
 export interface FamilyInput {
   parentName: string;
@@ -102,6 +112,16 @@ export async function archiveFamily(id: string): Promise<void> {
   await updateFamily(id, { isActive: false });
 }
 
+export async function unarchiveFamily(id: string): Promise<void> {
+  await updateFamily(id, { isActive: true });
+}
+
+export async function deleteFamilyPermanent(id: string): Promise<void> {
+  const db = getFirestoreDb();
+  if (!db) return;
+  await deleteDoc(doc(db, "families", id));
+}
+
 // --- Students --------------------------------------------------------------
 export interface StudentInput {
   familyId: string;
@@ -132,7 +152,7 @@ export async function recordStudent(input: StudentInput): Promise<string | null>
 
 export async function updateStudent(
   id: string,
-  patch: Partial<Omit<Student, "id">>
+  patch: Record<string, unknown>
 ): Promise<void> {
   const db = getFirestoreDb();
   if (!db) return;
@@ -147,9 +167,27 @@ export async function archiveStudent(id: string): Promise<void> {
   await updateStudent(id, { isActive: false });
 }
 
+export async function unarchiveStudent(id: string): Promise<void> {
+  await updateStudent(id, { isActive: true });
+}
+
+export async function deleteStudentPermanent(id: string): Promise<void> {
+  const db = getFirestoreDb();
+  if (!db) return;
+  await deleteDoc(doc(db, "students", id));
+}
+
+/** Unassign a student from their class (removes the classId field). */
+export async function removeStudentFromClass(id: string): Promise<void> {
+  const db = getFirestoreDb();
+  if (!db) return;
+  await updateDoc(doc(db, "students", id), { classId: deleteField() });
+}
+
 // --- Classes ---------------------------------------------------------------
 export interface ClassInput {
   name: string;
+  level?: string;
   teacherId?: string;
   notes?: string;
 }
@@ -158,6 +196,7 @@ export function buildClass(input: ClassInput): Omit<Class, "id"> {
   if (!input.name.trim()) throw new Error("class name is required");
   return {
     name: input.name.trim(),
+    level: input.level?.trim() || undefined,
     teacherId: input.teacherId,
     isActive: true,
     notes: input.notes ?? "",
@@ -173,7 +212,7 @@ export async function recordClass(input: ClassInput): Promise<string | null> {
 
 export async function updateClass(
   id: string,
-  patch: Partial<Omit<Class, "id">>
+  patch: Record<string, unknown>
 ): Promise<void> {
   const db = getFirestoreDb();
   if (!db) return;
@@ -182,6 +221,16 @@ export async function updateClass(
 
 export async function archiveClass(id: string): Promise<void> {
   await updateClass(id, { isActive: false });
+}
+
+export async function unarchiveClass(id: string): Promise<void> {
+  await updateClass(id, { isActive: true });
+}
+
+export async function deleteClassPermanent(id: string): Promise<void> {
+  const db = getFirestoreDb();
+  if (!db) return;
+  await deleteDoc(doc(db, "classes", id));
 }
 
 // --- Teachers --------------------------------------------------------------
@@ -229,6 +278,16 @@ export async function updateTeacher(
 
 export async function archiveTeacher(id: string): Promise<void> {
   await updateTeacher(id, { isActive: false });
+}
+
+export async function unarchiveTeacher(id: string): Promise<void> {
+  await updateTeacher(id, { isActive: true });
+}
+
+export async function deleteTeacherPermanent(id: string): Promise<void> {
+  const db = getFirestoreDb();
+  if (!db) return;
+  await deleteDoc(doc(db, "teachers", id));
 }
 
 // --- Salaries (idempotent on teacherId + month) ----------------------------
