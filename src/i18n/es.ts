@@ -191,4 +191,7 @@ export const es: Dictionary = {
   grandTotal: "Total",
   addDonor: "Añadir donante",
   searchDonors: "Buscar donantes…",
+  revenue: "Ingresos",
+  incomeVsExpenses: "Ingresos y gastos",
+  studentsTeachersClasses: "Alumnos, profesores y clases",
 };

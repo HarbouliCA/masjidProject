@@ -191,4 +191,7 @@ export const ca: Dictionary = {
   grandTotal: "Total",
   addDonor: "Afegeix un donant",
   searchDonors: "Cerca donants…",
+  revenue: "Ingressos",
+  incomeVsExpenses: "Ingressos i despeses",
+  studentsTeachersClasses: "Alumnes, professors i classes",
 };

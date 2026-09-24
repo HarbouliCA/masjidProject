@@ -193,6 +193,9 @@ export const ar = {
   grandTotal: "المجموع",
   addDonor: "إضافة محسن",
   searchDonors: "بحث في المحسنين…",
+  revenue: "الإيرادات",
+  incomeVsExpenses: "الإيرادات والمصروفات",
+  studentsTeachersClasses: "الطلاب والمعلمون والفصول",
 } as const;
 
 export type TranslationKey = keyof typeof ar;
