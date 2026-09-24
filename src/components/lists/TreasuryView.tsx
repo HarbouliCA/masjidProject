@@ -63,14 +63,14 @@ export function TreasuryView({ t }: { t: Dictionary }) {
         title={t.masjid}
         ledger={treasury.masjid}
         transferLabel={t.transfers}
-        transferCents={treasury.masjid.transfersInCents}
+        transferCents={treasury.masjid.transfersInCents - treasury.masjid.transfersOutCents}
       />
       <ScopeCard
         t={t}
         title={t.school}
         ledger={treasury.school}
         transferLabel={t.transfers}
-        transferCents={-treasury.school.transfersOutCents}
+        transferCents={treasury.school.transfersInCents - treasury.school.transfersOutCents}
       />
       <div className="rounded-xl border border-nour-gold-500/60 bg-nour-gold-500/5 p-5 dark:bg-nour-green-700">
         <h3 className="mb-3 font-heading text-lg font-semibold">{t.consolidated}</h3>

@@ -26,7 +26,7 @@ export function DashboardView({ t }: { t: Dictionary }) {
   const ramadan = isRamadan(new Date());
 
   const kpis = [
-    { label: t.donations, cents: donations.reduce((s, d) => s + d.amountCents, 0) },
+    { label: t.donations, cents: donations.reduce((s, d) => (d.channel === "ramadan_campaign" ? s : s + d.amountCents), 0) },
     { label: t.fridayBox, cents: fridayTotal },
     { label: t.expenses, cents: treasury.consolidated.expensesCents },
     { label: t.balance, cents: treasury.consolidated.netCents },

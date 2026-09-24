@@ -10,9 +10,9 @@ import type { Dictionary } from "@/i18n";
 export function SettingsForm({ t }: { t: Dictionary }) {
   const { data: settings } = useSettings();
   const queryClient = useQueryClient();
-  const [oneChild, setOneChild] = useState("20");
-  const [twoChildren, setTwoChildren] = useState("18");
-  const [threePlus, setThreePlus] = useState("15");
+  const [oneChild, setOneChild] = useState("10");
+  const [twoChildren, setTwoChildren] = useState("20");
+  const [threePlus, setThreePlus] = useState("30");
   const [english, setEnglish] = useState("10");
   const [iban, setIban] = useState("");
   const [titular, setTitular] = useState("");

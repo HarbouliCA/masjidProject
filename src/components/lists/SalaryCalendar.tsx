@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTeachers, useSalaryPayments } from "@/lib/data/hooks";
 import { upsertSalaryPayment } from "@/lib/crud";
-import { MASJID_GRID_MONTHS } from "@/lib/grid";
+import { TEACHER_SALARY_MONTHS } from "@/lib/grid";
 import { Money } from "../Money";
 import { PencilIcon } from "../icons/PencilIcon";
 import { SalaryEditDialog, type SalaryEditContext } from "../SalaryEditDialog";
@@ -58,20 +58,30 @@ export function SalaryCalendar({ t }: { t: Dictionary }) {
               <th className="sticky inset-inline-start-0 bg-surface px-4 py-3 text-start font-medium text-foreground">
                 {t.teacher}
               </th>
-              {MASJID_GRID_MONTHS.map((m) => (
+              {TEACHER_SALARY_MONTHS.map((m) => (
                 <th key={m.key} className="min-w-[6.5rem] px-2 py-3 text-center font-medium text-foreground">
                   {m.label}
                 </th>
               ))}
+              <th className="min-w-[6.5rem] px-2 py-3 text-center font-medium text-foreground bg-nour-gold-300/20">
+                {t.total}
+              </th>
             </tr>
           </thead>
           <tbody>
-            {active.map((teacher) => (
+            {active.map((teacher) => {
+              const paidTotal = TEACHER_SALARY_MONTHS.reduce((sum, m) => {
+                const p = paymentFor(teacher.id, m.key);
+                const amount = p?.expectedCents ?? 0;
+                const paid = !!p && p.paidCents >= amount && amount > 0;
+                return paid ? sum + amount : sum;
+              }, 0);
+              return (
               <tr key={teacher.id} className="border-b border-nour-gold-300/20 last:border-0">
                 <td className="sticky inset-inline-start-0 bg-surface px-4 py-2 font-medium text-foreground">
                   <span dir="auto">{teacher.fullName}</span>
                 </td>
-                {MASJID_GRID_MONTHS.map((m) => {
+                {TEACHER_SALARY_MONTHS.map((m) => {
                   const payment = paymentFor(teacher.id, m.key);
                   const amount = payment?.expectedCents ?? 0;
                   const paid = !!payment && payment.paidCents >= amount && amount > 0;
@@ -109,8 +119,12 @@ export function SalaryCalendar({ t }: { t: Dictionary }) {
                     </td>
                   );
                 })}
+                <td className="px-2 py-2 text-center font-bold text-foreground bg-nour-gold-300/20">
+                  {paidTotal > 0 ? <Money cents={paidTotal} /> : "0"}
+                </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

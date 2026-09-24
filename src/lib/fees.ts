@@ -1,28 +1,23 @@
-/**
- * School fee pricing engine (plan §9.2, settings 20/18/15/10).
- *
- * Verified against the workbook: per-child Arabic fee with sibling discount
- * (1 child €20, 2 children €18, 3+ €15) + flat €10/child English surcharge.
- * Anomalies (e.g. a family charged the 1-child rate for 2 children) surface as
- * `isManualOverride` — never silently "corrected".
- */
-import type { Cents } from "./schema";
+import type { Cents, Settings } from "./schema";
 
-export const PRICING = {
-  oneChild: 2000,
-  twoChildren: 1800,
-  threePlusChildren: 1500,
+export const DEFAULT_PRICING = {
+  oneChild: 1000,
+  twoChildren: 2000,
+  threePlusChildren: 3000,
   englishPerChild: 1000,
 } as const;
 
-export function arabicFeePerChildCents(children: number): Cents {
-  if (children <= 1) return PRICING.oneChild;
-  if (children === 2) return PRICING.twoChildren;
-  return PRICING.threePlusChildren;
+export function arabicFeeFlatCents(children: number, settings?: Settings | null): Cents {
+  const pricing = settings?.pricing ?? DEFAULT_PRICING;
+  if (children <= 0) return 0;
+  if (children === 1) return pricing.oneChild;
+  if (children === 2) return pricing.twoChildren;
+  return pricing.threePlusChildren;
 }
 
-export function englishFeeCents(englishChildren: number): Cents {
-  return PRICING.englishPerChild * englishChildren;
+export function englishFeeCents(englishChildren: number, settings?: Settings | null): Cents {
+  const pricing = settings?.pricing ?? DEFAULT_PRICING;
+  return pricing.englishPerChild * englishChildren;
 }
 
 export interface FeeAssessment {
@@ -32,17 +27,14 @@ export interface FeeAssessment {
   isManualOverride: boolean;
 }
 
-/**
- * Assess the correct fee for a family and flag any recorded total that does not
- * match the pricing rule (plan §3 fee anomalies).
- */
 export function assessFees(
   arabicChildren: number,
   englishChildren: number,
+  settings?: Settings | null,
   recordedTotalCents?: Cents
 ): FeeAssessment {
-  const arabic = arabicFeePerChildCents(arabicChildren) * arabicChildren;
-  const english = englishFeeCents(englishChildren);
+  const arabic = arabicFeeFlatCents(arabicChildren, settings);
+  const english = englishFeeCents(englishChildren, settings);
   const totalCents = arabic + english;
   const isManualOverride =
     recordedTotalCents !== undefined && recordedTotalCents !== totalCents;

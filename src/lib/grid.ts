@@ -23,3 +23,17 @@ export const SCHOOL_GRID_MONTHS: GridMonth[] = [
   { key: "2026-05", label: ARABIC_MONTHS[4] },
   { key: "2026-06", label: ARABIC_MONTHS[5] },
 ];
+
+/** Teacher salary academic year (Oct 2025 – Jul 2026). */
+export const TEACHER_SALARY_MONTHS: GridMonth[] = [
+  { key: "2025-10", label: ARABIC_MONTHS[9] },
+  { key: "2025-11", label: ARABIC_MONTHS[10] },
+  { key: "2025-12", label: ARABIC_MONTHS[11] },
+  { key: "2026-01", label: ARABIC_MONTHS[0] },
+  { key: "2026-02", label: ARABIC_MONTHS[1] },
+  { key: "2026-03", label: ARABIC_MONTHS[2] },
+  { key: "2026-04", label: ARABIC_MONTHS[3] },
+  { key: "2026-05", label: ARABIC_MONTHS[4] },
+  { key: "2026-06", label: ARABIC_MONTHS[5] },
+  { key: "2026-07", label: ARABIC_MONTHS[6] },
+];

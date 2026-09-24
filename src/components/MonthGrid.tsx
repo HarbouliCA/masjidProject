@@ -17,10 +17,10 @@ export interface MonthGridRow {
 }
 
 const statusClass: Record<ObligationStatus, string> = {
-  paid: "bg-success/15 text-success",
-  partial: "bg-warning/15 text-warning",
-  unpaid: "text-nour-stone-400",
-  waived: "text-nour-stone-400",
+  paid: "bg-success/15 text-success dark:text-green-300",
+  partial: "bg-warning/15 text-warning dark:text-yellow-300",
+  unpaid: "text-nour-stone-400 dark:text-gray-400",
+  waived: "text-nour-stone-400 dark:text-gray-400",
 };
 
 /**

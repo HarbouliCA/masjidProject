@@ -1,55 +1,49 @@
 import { describe, it, expect } from "vitest";
 import {
-  PRICING,
-  arabicFeePerChildCents,
+  DEFAULT_PRICING,
+  arabicFeeFlatCents,
   assessFees,
 } from "./fees";
 
-describe("arabicFeePerChildCents", () => {
-  it("charges €20 for 1 child", () => {
-    expect(arabicFeePerChildCents(1)).toBe(PRICING.oneChild);
+describe("arabicFeeFlatCents", () => {
+  it("charges €10 for 1 child", () => {
+    expect(arabicFeeFlatCents(1)).toBe(DEFAULT_PRICING.oneChild);
   });
 
-  it("charges €18 per child for 2 children", () => {
-    expect(arabicFeePerChildCents(2)).toBe(PRICING.twoChildren);
+  it("charges €20 total for 2 children", () => {
+    expect(arabicFeeFlatCents(2)).toBe(DEFAULT_PRICING.twoChildren);
   });
 
-  it("charges €15 per child for 3+ children", () => {
-    expect(arabicFeePerChildCents(3)).toBe(PRICING.threePlusChildren);
-    expect(arabicFeePerChildCents(5)).toBe(PRICING.threePlusChildren);
+  it("charges €30 total for 3+ children", () => {
+    expect(arabicFeeFlatCents(3)).toBe(DEFAULT_PRICING.threePlusChildren);
+    expect(arabicFeeFlatCents(5)).toBe(DEFAULT_PRICING.threePlusChildren);
   });
 });
 
 describe("assessFees", () => {
-  it("matches the workbook: 1 arabic + 1 english = €30", () => {
+  it("calculates 1 arabic + 1 english = €20", () => {
     expect(assessFees(1, 1)).toEqual({
-      arabicFeeCents: 2000,
+      arabicFeeCents: 1000,
       englishFeeCents: 1000,
-      totalCents: 3000,
+      totalCents: 2000,
       isManualOverride: false,
     });
   });
 
-  it("matches the workbook: 3 arabic = €45", () => {
-    expect(assessFees(3, 0).totalCents).toBe(4500);
+  it("calculates 3 arabic = €30", () => {
+    expect(assessFees(3, 0).totalCents).toBe(3000);
   });
 
-  it("matches the workbook: 2 arabic + 2 english = €56", () => {
-    expect(assessFees(2, 2).totalCents).toBe(5600);
+  it("calculates 2 arabic + 2 english = €40", () => {
+    expect(assessFees(2, 2).totalCents).toBe(4000); // 20 + 20
   });
 
-  it("matches the workbook: 4 arabic = €60", () => {
-    expect(assessFees(4, 0).totalCents).toBe(6000);
+  it("calculates 4 arabic = €30", () => {
+    expect(assessFees(4, 0).totalCents).toBe(3000);
   });
 
-  it("flags the سعيد جيحي anomaly (2 children charged €20)", () => {
-    const a = assessFees(2, 0, 2000);
-    expect(a.totalCents).toBe(3600);
-    expect(a.isManualOverride).toBe(true);
-  });
-
-  it("flags the منعم البشيري anomaly (1 child charged €36)", () => {
-    const a = assessFees(1, 0, 3600);
+  it("flags anomaly if recorded total doesn't match", () => {
+    const a = assessFees(2, 0, null, 2500); // Pass null for settings, 2500 for recordedTotal
     expect(a.totalCents).toBe(2000);
     expect(a.isManualOverride).toBe(true);
   });

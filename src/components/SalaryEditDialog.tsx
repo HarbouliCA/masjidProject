@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { upsertSalaryPayment } from "@/lib/crud";
 import { Field, inputClass, buttonClass, ghostButtonClass } from "./forms/shared";
+import { useSubmit } from "./forms/useSubmit";
+import { parseEURToCents } from "@/lib/money";
 import type { Dictionary } from "@/i18n";
 import type { SalaryPayment } from "@/lib/schema";
 
@@ -25,12 +26,14 @@ export function SalaryEditDialog({
   onClose: () => void;
 }) {
   const [amount, setAmount] = useState("");
-  const queryClient = useQueryClient();
+  const { busy, error, saved, runAndInvalidate } = useSubmit();
 
   useEffect(() => {
     if (context) {
       setAmount(
-        context.payment ? (context.payment.expectedCents / 100).toString() : ""
+        context.payment && context.payment.expectedCents > 0
+          ? (context.payment.expectedCents / 100).toString()
+          : ""
       );
     }
   }, [context]);
@@ -39,18 +42,19 @@ export function SalaryEditDialog({
   const ctx = context;
 
   async function submit() {
-    const cents = Math.round(Number(amount) * 100);
-    if (!Number.isFinite(cents) || cents <= 0) return;
-    await upsertSalaryPayment({
-      teacherId: ctx.teacherId,
-      month: ctx.month,
-      expectedCents: cents,
-      paidCents: ctx.payment?.paidCents ?? 0,
-      paidAt: ctx.payment?.paidAt,
-      notes: ctx.payment?.notes ?? "",
+    const cents = parseEURToCents(amount);
+    if (!Number.isFinite(cents) || cents < 0) return;
+    await runAndInvalidate(async () => {
+      await upsertSalaryPayment({
+        teacherId: ctx.teacherId,
+        month: ctx.month,
+        expectedCents: cents,
+        paidCents: ctx.payment?.paidCents ?? 0,
+        paidAt: ctx.payment?.paidAt,
+        notes: ctx.payment?.notes ?? "",
+      });
+      onClose();
     });
-    queryClient.invalidateQueries();
-    onClose();
   }
 
   return (
@@ -64,13 +68,13 @@ export function SalaryEditDialog({
         dir="rtl"
       >
         <h2 className="font-heading text-lg font-semibold">
-          {ctx.payment ? t.editSalary : t.addSalary}
+          {ctx.payment && ctx.payment.expectedCents > 0 ? t.editSalary : t.addSalary}
         </h2>
         <p className="mt-1 text-sm text-muted">
           {ctx.teacherName} · {ctx.monthLabel}
         </p>
 
-        <div className="mt-4">
+        <div className="mt-4 space-y-3">
           <Field label={t.salary}>
             <input
               dir="ltr"
@@ -80,14 +84,16 @@ export function SalaryEditDialog({
               className={inputClass}
             />
           </Field>
+          {error && <p className="text-sm text-danger">{error}</p>}
         </div>
 
         <div className="mt-6 flex justify-end gap-2">
+          {saved && <span className="text-sm text-success">{t.saved}</span>}
           <button type="button" onClick={onClose} className={ghostButtonClass}>
             {t.cancel}
           </button>
-          <button type="button" onClick={submit} className={buttonClass}>
-            {t.save}
+          <button type="button" onClick={submit} disabled={busy} className={buttonClass}>
+            {busy ? t.saving : t.save}
           </button>
         </div>
       </div>

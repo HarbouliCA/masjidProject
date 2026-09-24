@@ -89,6 +89,7 @@ export interface Payment {
 export type DonationChannel =
   | "friday_box"
   | "ramadan_daily"
+  | "ramadan_campaign"
   | "eid_men"
   | "eid_women"
   | "hucha"
@@ -119,6 +120,7 @@ export interface Donation {
   hijriLabel?: string;
   notes: string;
   needsReview?: boolean;
+  isActive?: boolean;
 }
 
 export interface Fund {
@@ -147,6 +149,14 @@ export interface Campaign {
   start: string;
   end: string;
   isActive: boolean;
+}
+
+export interface CampaignDonor {
+  id: string;
+  campaignId: string;
+  name: string;
+  amountCents: Cents;
+  isActive?: boolean;
 }
 
 export interface RecurringExpense {
@@ -200,6 +210,7 @@ export interface Expense {
   createdByUid: string;
   attachmentUrl?: string;
   needsReview?: boolean;
+  isActive?: boolean;
 }
 
 export interface Transfer {

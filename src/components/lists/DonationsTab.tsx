@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useExpenses } from "@/lib/data/hooks";
+import { useDonations } from "@/lib/data/hooks";
 import {
-  recordExpenseDoc,
-  updateExpenseDoc,
-  archiveExpenseDoc,
-  unarchiveExpenseDoc,
-  deleteExpenseDoc,
+  recordDonationDoc,
+  updateDonationDoc,
+  archiveDonationDoc,
+  unarchiveDonationDoc,
+  deleteDonationDoc,
 } from "@/lib/crud";
 import { parseEURToCents } from "@/lib/money";
 import { formatDate } from "@/lib/dates";
@@ -16,13 +16,15 @@ import { useSubmit } from "../forms/useSubmit";
 import { ConfirmDialog } from "../ConfirmDialog";
 import { Money } from "../Money";
 import type { Dictionary } from "@/i18n";
-import type { Expense } from "@/lib/schema";
+import type { Donation } from "@/lib/schema";
 
-export function ExpensesList({ t }: { t: Dictionary }) {
-  const { data = [], isLoading } = useExpenses();
+export function DonationsTab({ t }: { t: Dictionary }) {
+  const { data = [], isLoading } = useDonations();
   const { busy, error, saved, runAndInvalidate } = useSubmit();
 
-  const expenses = data.filter((e) => e.scope === "masjid");
+  const donations = data.filter(
+    (d) => d.channel !== "friday_box" && d.channel !== "ramadan_campaign"
+  );
 
   const [search, setSearch] = useState("");
   const [fromDate, setFromDate] = useState("");
@@ -31,27 +33,27 @@ export function ExpensesList({ t }: { t: Dictionary }) {
   const [sortAsc, setSortAsc] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState<Expense | null>(null);
+  const [editing, setEditing] = useState<Donation | null>(null);
   const [date, setDate] = useState("");
-  const [description, setDescription] = useState("");
+  const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [notes, setNotes] = useState("");
-  const [toArchive, setToArchive] = useState<Expense | null>(null);
-  const [toDelete, setToDelete] = useState<Expense | null>(null);
+  const [toArchive, setToArchive] = useState<Donation | null>(null);
+  const [toDelete, setToDelete] = useState<Donation | null>(null);
 
-  const archivedCount = expenses.filter((e) => e.isActive === false).length;
-  const activeExpenses = expenses.filter((e) =>
-    showArchived ? e.isActive === false : e.isActive !== false
+  const archivedCount = donations.filter((d) => d.isActive === false).length;
+  const activeDonations = donations.filter((d) =>
+    showArchived ? d.isActive === false : d.isActive !== false
   );
 
-  const filtered = activeExpenses.filter((e) => {
+  const filtered = activeDonations.filter((d) => {
     const q = search.trim().toLowerCase();
     const matchSearch =
       !q ||
-      e.description.toLowerCase().includes(q) ||
-      e.observation.toLowerCase().includes(q);
-    const matchFrom = !fromDate || (e.date && e.date >= fromDate);
-    const matchTo = !toDate || (e.date && e.date <= toDate);
+      (d.donorName ?? "").toLowerCase().includes(q) ||
+      (d.notes ?? "").toLowerCase().includes(q);
+    const matchFrom = !fromDate || (d.date && d.date >= fromDate);
+    const matchTo = !toDate || (d.date && d.date <= toDate);
     return matchSearch && matchFrom && matchTo;
   });
 
@@ -64,40 +66,52 @@ export function ExpensesList({ t }: { t: Dictionary }) {
     return sortAsc ? cmp : -cmp;
   });
 
-  const totalCents = activeExpenses.reduce((s, e) => s + e.amountCents, 0);
+  const totalCents = activeDonations.reduce((s, d) => s + d.amountCents, 0);
+
+  function donorLabel(d: Donation): string {
+    return d.donorName || (d.donorType === "anonymous" ? t.anonymousDonor : "—");
+  }
 
   function openAdd() {
     setEditing(null);
     setDate(new Date().toISOString().slice(0, 10));
-    setDescription("");
+    setName("");
     setAmount("");
     setNotes("");
     setShowForm(true);
   }
 
-  function openEdit(e: Expense) {
-    setEditing(e);
-    setDate(e.date);
-    setDescription(e.description);
-    setAmount((e.amountCents / 100).toString());
-    setNotes(e.observation ?? "");
+  function openEdit(d: Donation) {
+    setEditing(d);
+    setDate(d.date);
+    setName(d.donorName ?? "");
+    setAmount((d.amountCents / 100).toString());
+    setNotes(d.notes ?? "");
     setShowForm(true);
   }
 
   async function submit() {
     const cents = parseEURToCents(amount);
     await runAndInvalidate(async () => {
-      if (!date) throw new Error(`${t.expenseDate}: ${t.error}`);
-      if (!description.trim()) throw new Error(`${t.expenseDescription}: ${t.error}`);
-      if (!Number.isFinite(cents) || cents <= 0) throw new Error(`${t.amount}: ${t.saveError}`);
-      const patch = {
-        date,
-        description: description.trim(),
-        amountCents: cents,
-        observation: notes.trim(),
-      };
-      if (editing) await updateExpenseDoc(editing.id, patch);
-      else await recordExpenseDoc({ scope: "masjid", category: "other", ...patch });
+      if (!date) throw new Error(`${t.date}: ${t.error}`);
+      if (!Number.isFinite(cents) || cents < 0) throw new Error(`${t.amount}: ${t.saveError}`);
+      const donorType = name.trim() ? "individual" : "anonymous";
+      if (editing) {
+        await updateDonationDoc(editing.id, {
+          date,
+          amountCents: cents,
+          donorName: name.trim(),
+          donorType,
+          notes: notes.trim(),
+        });
+      } else {
+        await recordDonationDoc({
+          date,
+          donorName: name.trim() || undefined,
+          amountCents: cents,
+          notes: notes.trim(),
+        });
+      }
       setShowForm(false);
     });
   }
@@ -105,21 +119,21 @@ export function ExpensesList({ t }: { t: Dictionary }) {
   async function confirmArchive() {
     if (!toArchive) return;
     await runAndInvalidate(async () => {
-      await archiveExpenseDoc(toArchive.id);
+      await archiveDonationDoc(toArchive.id);
       setToArchive(null);
     });
   }
 
   async function handleUnarchive(id: string) {
     await runAndInvalidate(async () => {
-      await unarchiveExpenseDoc(id);
+      await unarchiveDonationDoc(id);
     });
   }
 
   async function confirmDelete() {
     if (!toDelete) return;
     await runAndInvalidate(async () => {
-      await deleteExpenseDoc(toDelete.id);
+      await deleteDonationDoc(toDelete.id);
       setToDelete(null);
     });
   }
@@ -127,7 +141,7 @@ export function ExpensesList({ t }: { t: Dictionary }) {
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-nour-gold-300/40 bg-surface p-4">
-        <p className="text-sm text-muted">{t.totalExpenses}</p>
+        <p className="text-sm text-muted">{t.total}</p>
         <Money cents={totalCents} className="mt-1 block font-heading text-xl font-semibold text-foreground" />
       </div>
 
@@ -136,7 +150,7 @@ export function ExpensesList({ t }: { t: Dictionary }) {
           dir="auto"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder={t.searchExpenses}
+          placeholder={t.searchDonations}
           className={`${inputClass} w-full sm:w-64`}
         />
         <div className="flex items-center gap-2">
@@ -154,7 +168,7 @@ export function ExpensesList({ t }: { t: Dictionary }) {
         )}
         {!showArchived && (
           <button type="button" onClick={openAdd} className={`${buttonClass} ms-auto`}>
-            {t.addExpense}
+            {t.addDonation}
           </button>
         )}
       </div>
@@ -162,17 +176,17 @@ export function ExpensesList({ t }: { t: Dictionary }) {
       {showForm && (
         <div className="space-y-2 rounded-xl border border-nour-gold-300/40 bg-surface p-4">
           <div className="grid gap-2 sm:grid-cols-2">
-            <Field label={t.expenseDate}>
+            <Field label={t.date}>
               <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputClass} />
             </Field>
             <Field label={t.amount}>
               <input dir="ltr" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className={inputClass} />
             </Field>
           </div>
-          <Field label={t.expenseDescription}>
-            <input dir="auto" value={description} onChange={(e) => setDescription(e.target.value)} className={inputClass} />
+          <Field label={t.donorName}>
+            <input dir="auto" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
           </Field>
-          <Field label={t.expenseNotes}>
+          <Field label={t.notes}>
             <textarea dir="auto" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} className={inputClass} />
           </Field>
           {error && <p className="text-sm text-danger">{error}</p>}
@@ -201,54 +215,54 @@ export function ExpensesList({ t }: { t: Dictionary }) {
               <tr className="border-b border-nour-gold-300/40 text-muted">
                 <th className="px-4 py-3 text-start font-medium">
                   <button type="button" onClick={() => { setSortBy("date"); setSortAsc(sortBy === "date" ? !sortAsc : false); }} className="hover:text-nour-gold-600">
-                    {t.expenseDate}
+                    {t.date}
                   </button>
                 </th>
-                <th className="px-4 py-3 text-start font-medium">{t.expenseDescription}</th>
+                <th className="px-4 py-3 text-start font-medium">{t.donorName}</th>
                 <th className="px-4 py-3 text-start font-medium">
                   <button type="button" onClick={() => { setSortBy("amount"); setSortAsc(sortBy === "amount" ? !sortAsc : false); }} className="hover:text-nour-gold-600">
                     {t.amount}
                   </button>
                 </th>
-                <th className="px-4 py-3 text-start font-medium">{t.expenseNotes}</th>
+                <th className="px-4 py-3 text-start font-medium">{t.notes}</th>
                 <th className="px-4 py-3 text-start font-medium">{t.actions}</th>
               </tr>
             </thead>
             <tbody>
-              {sorted.map((e) => (
-                <tr key={e.id} className="border-b border-nour-gold-300/20 last:border-0">
+              {sorted.map((d) => (
+                <tr key={d.id} className="border-b border-nour-gold-300/20 last:border-0">
                   <td className="px-4 py-3 whitespace-nowrap">
-                    {e.date ? formatDate(new Date(`${e.date}T12:00:00Z`)) : "—"}
-                    {e.isActive === false && (
+                    {d.date ? formatDate(new Date(`${d.date}T12:00:00Z`)) : "—"}
+                    {d.isActive === false && (
                       <span className="ms-2 rounded bg-warning/20 px-1.5 py-0.5 text-xs text-warning">{t.archived}</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <span dir="auto">{e.description}</span>
+                    <span dir="auto">{donorLabel(d)}</span>
                   </td>
                   <td className="px-4 py-3">
-                    <Money cents={e.amountCents} />
+                    <Money cents={d.amountCents} />
                   </td>
                   <td className="px-4 py-3">
-                    <span dir="auto">{e.observation || "—"}</span>
+                    <span dir="auto">{d.notes || "—"}</span>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
-                      {e.isActive !== false ? (
+                      {d.isActive !== false ? (
                         <>
-                          <button type="button" onClick={() => openEdit(e)} className={ghostButtonClass}>
+                          <button type="button" onClick={() => openEdit(d)} className={ghostButtonClass}>
                             {t.edit}
                           </button>
-                          <button type="button" onClick={() => setToArchive(e)} className={ghostButtonClass}>
+                          <button type="button" onClick={() => setToArchive(d)} className={ghostButtonClass}>
                             {t.archive}
                           </button>
                         </>
                       ) : (
                         <>
-                          <button type="button" onClick={() => handleUnarchive(e.id)} className={buttonClass}>
+                          <button type="button" onClick={() => handleUnarchive(d.id)} className={buttonClass}>
                             {t.unarchive}
                           </button>
-                          <button type="button" onClick={() => setToDelete(e)} className="rounded-lg border border-danger/60 px-3 py-1.5 text-sm text-danger hover:bg-danger/10">
+                          <button type="button" onClick={() => setToDelete(d)} className="rounded-lg border border-danger/60 px-3 py-1.5 text-sm text-danger hover:bg-danger/10">
                             {t.permanentDelete}
                           </button>
                         </>
@@ -266,7 +280,7 @@ export function ExpensesList({ t }: { t: Dictionary }) {
         t={t}
         open={!!toArchive}
         title={t.archive}
-        message={`${t.confirmDelete} ${toArchive?.description ?? ""}`}
+        message={`${t.confirmDelete} ${toArchive ? donorLabel(toArchive) : ""}`}
         busy={busy}
         onCancel={() => setToArchive(null)}
         onConfirm={confirmArchive}
@@ -275,7 +289,7 @@ export function ExpensesList({ t }: { t: Dictionary }) {
         t={t}
         open={!!toDelete}
         title={t.permanentDelete}
-        message={`${t.confirmPermanentDelete} (${toDelete?.description ?? ""})`}
+        message={`${t.confirmPermanentDelete} (${toDelete ? donorLabel(toDelete) : ""})`}
         busy={busy}
         onCancel={() => setToDelete(null)}
         onConfirm={confirmDelete}

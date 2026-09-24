@@ -40,12 +40,12 @@ service cloud.firestore {
       allow update, delete: if false;      // append-only; corrections = new doc
     }
     match /donations/{id}      { allow read: if isFinance(); allow write: if isFinance(); }
+    match /campaignDonors/{id} { allow read: if isFinance(); allow write: if isFinance(); }
     match /funds/{id}          { allow read: if isStaff();   allow write: if isFinance(); }
     match /campaigns/{id}      { allow read: if auth_();     allow write: if isFinance(); }
     match /recurringExpenses/{id} { allow read: if isStaff(); allow write: if isFinance(); }
     match /vendors/{id}        { allow read: if isStaff();   allow write: if isFinance(); }
-    match /transfers/{id}      { allow read: if isFinance(); allow create: if isFinance();
-                                 allow update, delete: if false; }
+    match /transfers/{id}      { allow read: if isFinance(); allow write: if isFinance(); }
     match /grades/{id} {
       allow read:  if isStaff() || (auth_() && resource.data.familyId == myFamily());
       allow write: if isStaff();

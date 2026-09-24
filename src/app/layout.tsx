@@ -33,7 +33,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: { default: "منصة مسجد النور", template: "%s · مسجد النور" },
   description:
-    "منصة المسجد والمدرسة — دفتر واحد، سجل واحد | Mezquita y escuela en una sola plataforma",
+    "متحدون في الإيمان • متحدون في المجتمع | Unidos en la fe • Unidos en la comunidad",
 };
 
 export default async function RootLayout({

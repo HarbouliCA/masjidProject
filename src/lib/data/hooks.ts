@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { getFirestoreDb } from "../firestore/client";
-import type { Family, Student, Member, PledgeMonth, Invoice, Donation, Expense, Transfer, Payment, Grade, Attendance, Class, Teacher, SalaryPayment, Event, PrayerTime, Announcement, AuditLog, Settings } from "../schema";
+import type { Family, Student, Member, PledgeMonth, Invoice, Donation, Expense, Transfer, Payment, Grade, Attendance, Class, Teacher, SalaryPayment, Event, PrayerTime, Announcement, AuditLog, Settings, CampaignDonor } from "../schema";
 
 export type DirectoryKind = "families" | "students" | "members";
 
@@ -62,6 +62,10 @@ export function useExpenses() {
 
 export function useTransfers() {
   return useCollection<Transfer>("transfers");
+}
+
+export function useCampaignDonors() {
+  return useCollection<CampaignDonor>("campaignDonors");
 }
 
 export function usePayments() {

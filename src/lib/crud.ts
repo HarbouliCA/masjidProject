@@ -19,6 +19,12 @@ import type {
   Settings,
   Student,
   Teacher,
+  Invoice,
+  Scope,
+  Expense,
+  Donation,
+  Transfer,
+  CampaignDonor,
 } from "./schema";
 
 // --- Members ---------------------------------------------------------------
@@ -343,6 +349,250 @@ export async function markSalaryPaid(
     paidCents: expectedCents,
     paidAt: new Date().toISOString(),
   });
+}
+
+// --- Invoices (Fees Calendar) --------------------------------------------
+export function invoiceDocId(familyId: string, month: string): string {
+  return `invoice-${familyId}-${month}`;
+}
+
+export interface InvoiceUpsertInput {
+  familyId: string;
+  month: string;
+  arabicChildren: number;
+  arabicFeeCents: Cents;
+  englishChildren: number;
+  englishFeeCents: Cents;
+  totalCents: Cents;
+  paidCents: Cents;
+  isManualOverride: boolean;
+  notes?: string;
+}
+
+export function buildInvoice(input: InvoiceUpsertInput): Omit<Invoice, "id" | "academicYearId"> {
+  const status = deriveObligationStatus(input.totalCents, input.paidCents);
+  return {
+    familyId: input.familyId,
+    month: input.month,
+    arabicChildren: input.arabicChildren,
+    arabicFeeCents: input.arabicFeeCents,
+    englishChildren: input.englishChildren,
+    englishFeeCents: input.englishFeeCents,
+    totalCents: input.totalCents,
+    paidCents: input.paidCents,
+    status,
+    isManualOverride: input.isManualOverride,
+    notes: input.notes ?? "",
+  };
+}
+
+export async function upsertInvoice(input: InvoiceUpsertInput): Promise<void> {
+  const db = getFirestoreDb();
+  if (!db) return;
+  const id = invoiceDocId(input.familyId, input.month);
+  await setDoc(doc(db, "invoices", id), stripUndefined({ ...buildInvoice(input), academicYearId: "2025-2026" }));
+}
+
+// --- Expenses (school) -----------------------------------------------------
+export interface ExpenseDocInput {
+  scope: Scope;
+  date: string;
+  description: string;
+  amountCents: Cents;
+  category: Expense["category"];
+  observation?: string;
+}
+
+export function buildExpenseDoc(input: ExpenseDocInput): Omit<Expense, "id"> {
+  if (!input.date) throw new Error("expense date is required");
+  if (!input.description.trim()) throw new Error("expense description is required");
+  if (!Number.isInteger(input.amountCents) || input.amountCents <= 0) {
+    throw new Error("expense amount must be a positive integer (cents)");
+  }
+  return {
+    scope: input.scope,
+    date: input.date,
+    description: input.description.trim(),
+    amountCents: input.amountCents,
+    category: input.category,
+    observation: input.observation ?? "",
+    createdByUid: "client",
+    isActive: true,
+  };
+}
+
+export async function recordExpenseDoc(input: ExpenseDocInput): Promise<string | null> {
+  const db = getFirestoreDb();
+  if (!db) return null;
+  const ref = await addDoc(collection(db, "expenses"), stripUndefined(buildExpenseDoc(input)));
+  return ref.id;
+}
+
+export async function updateExpenseDoc(id: string, patch: Record<string, unknown>): Promise<void> {
+  const db = getFirestoreDb();
+  if (!db) return;
+  await updateDoc(doc(db, "expenses", id), stripUndefined(patch));
+}
+
+export async function archiveExpenseDoc(id: string): Promise<void> {
+  await updateExpenseDoc(id, { isActive: false });
+}
+
+export async function unarchiveExpenseDoc(id: string): Promise<void> {
+  await updateExpenseDoc(id, { isActive: true });
+}
+
+export async function deleteExpenseDoc(id: string): Promise<void> {
+  const db = getFirestoreDb();
+  if (!db) return;
+  await deleteDoc(doc(db, "expenses", id));
+}
+
+// --- Donations -------------------------------------------------------------
+export interface DonationDocInput {
+  date: string;
+  donorName?: string;
+  amountCents: Cents;
+  notes?: string;
+  channel?: Donation["channel"];
+  donorType?: Donation["donorType"];
+}
+
+export function buildDonationDoc(input: DonationDocInput): Omit<Donation, "id"> {
+  if (!input.date) throw new Error("donation date is required");
+  if (!Number.isInteger(input.amountCents) || input.amountCents < 0) {
+    throw new Error("donation amount must be a non-negative integer (cents)");
+  }
+  return {
+    date: input.date,
+    amountCents: input.amountCents,
+    method: "cash",
+    channel: input.channel ?? "direct",
+    donorType: input.donorType ?? (input.donorName ? "individual" : "anonymous"),
+    donorName: input.donorName?.trim() || undefined,
+    receiptIssued: false,
+    notes: input.notes ?? "",
+    isActive: true,
+  };
+}
+
+export async function recordDonationDoc(input: DonationDocInput): Promise<string | null> {
+  const db = getFirestoreDb();
+  if (!db) return null;
+  const ref = await addDoc(collection(db, "donations"), stripUndefined(buildDonationDoc(input)));
+  return ref.id;
+}
+
+export async function updateDonationDoc(id: string, patch: Record<string, unknown>): Promise<void> {
+  const db = getFirestoreDb();
+  if (!db) return;
+  await updateDoc(doc(db, "donations", id), stripUndefined(patch));
+}
+
+export async function archiveDonationDoc(id: string): Promise<void> {
+  await updateDonationDoc(id, { isActive: false });
+}
+
+export async function unarchiveDonationDoc(id: string): Promise<void> {
+  await updateDonationDoc(id, { isActive: true });
+}
+
+export async function deleteDonationDoc(id: string): Promise<void> {
+  const db = getFirestoreDb();
+  if (!db) return;
+  await deleteDoc(doc(db, "donations", id));
+}
+
+// --- Transfers -------------------------------------------------------------
+export interface TransferDocInput {
+  fromScope: Scope;
+  toScope: Scope;
+  amountCents: Cents;
+  date: string;
+  notes?: string;
+}
+
+export function buildTransferDoc(input: TransferDocInput): Omit<Transfer, "id"> {
+  if (input.fromScope === input.toScope) throw new Error("transfer must cross scopes");
+  if (!input.date) throw new Error("transfer date is required");
+  if (!Number.isInteger(input.amountCents) || input.amountCents <= 0) {
+    throw new Error("transfer amount must be a positive integer (cents)");
+  }
+  return {
+    fromScope: input.fromScope,
+    toScope: input.toScope,
+    amountCents: input.amountCents,
+    date: input.date,
+    createdByUid: "client",
+    notes: input.notes ?? "",
+  };
+}
+
+export async function recordTransferDoc(input: TransferDocInput): Promise<string | null> {
+  const db = getFirestoreDb();
+  if (!db) return null;
+  const ref = await addDoc(collection(db, "transfers"), stripUndefined(buildTransferDoc(input)));
+  return ref.id;
+}
+
+export async function updateTransferDoc(id: string, patch: Record<string, unknown>): Promise<void> {
+  const db = getFirestoreDb();
+  if (!db) return;
+  await updateDoc(doc(db, "transfers", id), stripUndefined(patch));
+}
+
+export async function deleteTransferDoc(id: string): Promise<void> {
+  const db = getFirestoreDb();
+  if (!db) return;
+  await deleteDoc(doc(db, "transfers", id));
+}
+
+// --- Campaign donors -------------------------------------------------------
+export interface CampaignDonorDocInput {
+  campaignId: string;
+  name: string;
+  amountCents: Cents;
+}
+
+export function buildCampaignDonorDoc(input: CampaignDonorDocInput): Omit<CampaignDonor, "id"> {
+  if (!input.campaignId) throw new Error("campaign id is required");
+  if (!input.name.trim()) throw new Error("donor name is required");
+  if (!Number.isInteger(input.amountCents) || input.amountCents < 0) {
+    throw new Error("donation amount must be a non-negative integer (cents)");
+  }
+  return {
+    campaignId: input.campaignId,
+    name: input.name.trim(),
+    amountCents: input.amountCents,
+    isActive: true,
+  };
+}
+
+export async function recordCampaignDonorDoc(input: CampaignDonorDocInput): Promise<string | null> {
+  const db = getFirestoreDb();
+  if (!db) return null;
+  const ref = await addDoc(collection(db, "campaignDonors"), stripUndefined(buildCampaignDonorDoc(input)));
+  return ref.id;
+}
+
+export async function updateCampaignDonorDoc(id: string, patch: Record<string, unknown>): Promise<void> {
+  const db = getFirestoreDb();
+  if (!db) return;
+  await updateDoc(doc(db, "campaignDonors", id), stripUndefined(patch));
+}
+
+export async function archiveCampaignDonorDoc(id: string): Promise<void> {
+  await updateCampaignDonorDoc(id, { isActive: false });
+}
+
+export async function unarchiveCampaignDonorDoc(id: string): Promise<void> {
+  await updateCampaignDonorDoc(id, { isActive: true });
+}
+
+export async function deleteCampaignDonorDoc(id: string): Promise<void> {
+  const db = getFirestoreDb();
+  if (!db) return;
+  await deleteDoc(doc(db, "campaignDonors", id));
 }
 
 // --- Settings (single doc "organization") ----------------------------------

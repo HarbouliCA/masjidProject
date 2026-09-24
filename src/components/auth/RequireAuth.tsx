@@ -22,14 +22,19 @@ export function RequireAuth({
   const isPublic = PUBLIC_SEGMENTS.includes(segment);
 
   useEffect(() => {
-    if (!loading && !user && !isPublic) {
-      router.replace(`/${locale}/login`);
+    if (!loading) {
+      if (!user && !isPublic) {
+        router.replace(`/${locale}/login`);
+      } else if (user && segment === "login") {
+        router.replace(`/${locale}`);
+      }
     }
-  }, [loading, user, isPublic, locale, router]);
+  }, [loading, user, isPublic, segment, locale, router]);
 
   if (loading) {
     return <div className="py-24 text-center text-sm text-muted">…</div>;
   }
   if (!user && !isPublic) return null; // redirecting
+  if (user && segment === "login") return null; // redirecting
   return <>{children}</>;
 }

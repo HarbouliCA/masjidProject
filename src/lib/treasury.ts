@@ -38,7 +38,11 @@ export function computeTreasury(input: {
   transfers: Transfer[];
 }): Treasury {
   const pledgesCollected = sum(input.pledgeMonths.map((p) => p.paidCents));
-  const donationsTotal = sum(input.donations.map((d) => d.amountCents));
+  const donationsTotal = sum(
+    input.donations
+      .filter((d) => d.channel !== "ramadan_campaign")
+      .map((d) => d.amountCents)
+  );
   const masjidExpenses = sum(
     input.expenses.filter((e) => e.scope === "masjid").map((e) => e.amountCents)
   );
@@ -50,6 +54,12 @@ export function computeTreasury(input: {
   );
   const masjidTransfersIn = sum(
     input.transfers.filter((t) => t.toScope === "masjid").map((t) => t.amountCents)
+  );
+  const masjidTransfersOut = sum(
+    input.transfers.filter((t) => t.fromScope === "masjid").map((t) => t.amountCents)
+  );
+  const schoolTransfersIn = sum(
+    input.transfers.filter((t) => t.toScope === "school").map((t) => t.amountCents)
   );
   const schoolTransfersOut = sum(
     input.transfers.filter((t) => t.fromScope === "school").map((t) => t.amountCents)
@@ -63,15 +73,15 @@ export function computeTreasury(input: {
       incomeCents: masjidIncome,
       expensesCents: masjidExpenses,
       transfersInCents: masjidTransfersIn,
-      transfersOutCents: 0,
-      netCents: masjidIncome + masjidTransfersIn - masjidExpenses,
+      transfersOutCents: masjidTransfersOut,
+      netCents: masjidIncome + masjidTransfersIn - masjidTransfersOut - masjidExpenses,
     },
     school: {
       incomeCents: schoolIncome,
       expensesCents: schoolExpenses,
-      transfersInCents: 0,
+      transfersInCents: schoolTransfersIn,
       transfersOutCents: schoolTransfersOut,
-      netCents: schoolIncome - schoolExpenses - schoolTransfersOut,
+      netCents: schoolIncome + schoolTransfersIn - schoolTransfersOut - schoolExpenses,
     },
     consolidated: {
       incomeCents: masjidIncome + schoolIncome,

@@ -10,7 +10,7 @@ import {
   deleteExpenseDoc,
 } from "@/lib/crud";
 import { parseEURToCents } from "@/lib/money";
-import { formatDate } from "@/lib/dates";
+import { formatDate, formatMonthKey } from "@/lib/dates";
 import { Field, inputClass, buttonClass, ghostButtonClass } from "../forms/shared";
 import { useSubmit } from "../forms/useSubmit";
 import { ConfirmDialog } from "../ConfirmDialog";
@@ -18,11 +18,11 @@ import { Money } from "../Money";
 import type { Dictionary } from "@/i18n";
 import type { Expense } from "@/lib/schema";
 
-export function ExpensesList({ t }: { t: Dictionary }) {
+export function SchoolExpensesTab({ t }: { t: Dictionary }) {
   const { data = [], isLoading } = useExpenses();
   const { busy, error, saved, runAndInvalidate } = useSubmit();
 
-  const expenses = data.filter((e) => e.scope === "masjid");
+  const schoolExpenses = data.filter((e) => e.scope === "school");
 
   const [search, setSearch] = useState("");
   const [fromDate, setFromDate] = useState("");
@@ -39,8 +39,8 @@ export function ExpensesList({ t }: { t: Dictionary }) {
   const [toArchive, setToArchive] = useState<Expense | null>(null);
   const [toDelete, setToDelete] = useState<Expense | null>(null);
 
-  const archivedCount = expenses.filter((e) => e.isActive === false).length;
-  const activeExpenses = expenses.filter((e) =>
+  const archivedCount = schoolExpenses.filter((e) => e.isActive === false).length;
+  const activeExpenses = schoolExpenses.filter((e) =>
     showArchived ? e.isActive === false : e.isActive !== false
   );
 
@@ -65,6 +65,10 @@ export function ExpensesList({ t }: { t: Dictionary }) {
   });
 
   const totalCents = activeExpenses.reduce((s, e) => s + e.amountCents, 0);
+  const currentMonth = formatMonthKey(new Date());
+  const monthCents = activeExpenses
+    .filter((e) => (e.date || "").startsWith(currentMonth))
+    .reduce((s, e) => s + e.amountCents, 0);
 
   function openAdd() {
     setEditing(null);
@@ -97,7 +101,7 @@ export function ExpensesList({ t }: { t: Dictionary }) {
         observation: notes.trim(),
       };
       if (editing) await updateExpenseDoc(editing.id, patch);
-      else await recordExpenseDoc({ scope: "masjid", category: "other", ...patch });
+      else await recordExpenseDoc({ scope: "school", category: "other", ...patch });
       setShowForm(false);
     });
   }
@@ -126,9 +130,19 @@ export function ExpensesList({ t }: { t: Dictionary }) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-nour-gold-300/40 bg-surface p-4">
-        <p className="text-sm text-muted">{t.totalExpenses}</p>
-        <Money cents={totalCents} className="mt-1 block font-heading text-xl font-semibold text-foreground" />
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-xl border border-nour-gold-300/40 bg-surface p-4">
+          <p className="text-sm text-muted">{t.totalExpenses}</p>
+          <Money cents={totalCents} className="mt-1 block font-heading text-xl font-semibold text-foreground" />
+        </div>
+        <div className="rounded-xl border border-nour-gold-300/40 bg-surface p-4">
+          <p className="text-sm text-muted">{t.monthExpenses}</p>
+          <Money cents={monthCents} className="mt-1 block font-heading text-xl font-semibold text-foreground" />
+        </div>
+        <div className="rounded-xl border border-nour-gold-300/40 bg-surface p-4">
+          <p className="text-sm text-muted">{t.expenseCount}</p>
+          <p className="mt-1 font-heading text-xl font-semibold text-foreground">{activeExpenses.length}</p>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

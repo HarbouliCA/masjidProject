@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTeachers } from "@/lib/data/hooks";
+import { useTeachers, useClasses } from "@/lib/data/hooks";
 import {
   recordTeacher,
   updateTeacher,
@@ -18,6 +18,7 @@ import type { Teacher } from "@/lib/schema";
 
 export function TeachersTab({ t }: { t: Dictionary }) {
   const { data = [], isLoading } = useTeachers();
+  const { data: classes = [] } = useClasses();
   const { busy, error, saved, runAndInvalidate } = useSubmit();
 
   const [showArchived, setShowArchived] = useState(false);
@@ -185,6 +186,7 @@ export function TeachersTab({ t }: { t: Dictionary }) {
             <thead>
               <tr className="border-b border-nour-gold-300/40 text-muted">
                 <th className="px-4 py-3 text-start font-medium">{t.name}</th>
+                <th className="px-4 py-3 text-start font-medium">{t.classes}</th>
                 <th className="px-4 py-3 text-start font-medium">{t.phone}</th>
                 <th className="px-4 py-3 text-start font-medium">{t.salary}</th>
                 <th className="px-4 py-3 text-start font-medium">{t.actions}</th>
@@ -203,6 +205,14 @@ export function TeachersTab({ t }: { t: Dictionary }) {
                         {t.archived}
                       </span>
                     )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span dir="auto">
+                      {classes
+                        .filter((c) => c.teacherId === x.id && c.isActive !== false)
+                        .map((c) => c.name)
+                        .join("، ") || "—"}
+                    </span>
                   </td>
                   <td className="px-4 py-3">
                     <span dir="ltr">{x.phone ?? "—"}</span>

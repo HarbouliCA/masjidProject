@@ -96,6 +96,17 @@
     background-size: 240px 240px;
   }
 
+  /*
+   * Brand banner — deep Islamic green with a subtle zellige texture and gold
+   * typography. Always green regardless of theme, per brand (plan §4).
+   */
+  .brand-banner {
+    background-color: var(--brand-green);
+    background-image: url("/patterns/zellige-dark.svg");
+    background-repeat: repeat;
+    background-size: 240px 240px;
+  }
+
   /* Arabic must never be letter-spaced; scope tracking to Latin-only if needed. */
   .latin {
     font-family: var(--font-inter), sans-serif;

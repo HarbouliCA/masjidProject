@@ -13,6 +13,7 @@ import {
 import { Field, inputClass, buttonClass, ghostButtonClass } from "../forms/shared";
 import { useSubmit } from "../forms/useSubmit";
 import { ConfirmDialog } from "../ConfirmDialog";
+import { exportXLSX } from "@/lib/export";
 import type { Dictionary } from "@/i18n";
 import type { Student } from "@/lib/schema";
 
@@ -30,6 +31,7 @@ export function StudentsTab({ t }: { t: Dictionary }) {
   const [english, setEnglish] = useState(false);
   const [familyId, setFamilyId] = useState("");
   const [classId, setClassId] = useState("");
+  const [filterClassId, setFilterClassId] = useState("");
 
   const [toArchive, setToArchive] = useState<Student | null>(null);
   const [toDelete, setToDelete] = useState<Student | null>(null);
@@ -40,9 +42,22 @@ export function StudentsTab({ t }: { t: Dictionary }) {
     id ? classes.find((c) => c.id === id)?.name ?? t.noClass : t.noClass;
 
   const archivedCount = data.filter((s) => s.isActive === false).length;
-  const visible = data.filter((s) =>
-    showArchived ? s.isActive === false : s.isActive !== false
-  );
+  const visible = data.filter((s) => {
+    const activeMatch = showArchived ? s.isActive === false : s.isActive !== false;
+    const classMatch = filterClassId === "unassigned" ? !s.classId : filterClassId ? s.classId === filterClassId : true;
+    return activeMatch && classMatch;
+  });
+
+  function exportGrid() {
+    const header = [t.name, t.family, t.classes, t.english];
+    const body = visible.map((s) => [
+      s.name,
+      familyName(s.familyId),
+      className(s.classId),
+      s.englishEnrolled ? t.yes : t.no
+    ]);
+    exportXLSX([header, ...body], "الطلاب", "الطلاب.xlsx");
+  }
 
   function openAdd() {
     setEditing(null);
@@ -121,12 +136,30 @@ export function StudentsTab({ t }: { t: Dictionary }) {
               {showArchived ? t.hideArchived : `${t.showArchived} (${archivedCount})`}
             </button>
           )}
+          <select
+            value={filterClassId}
+            onChange={(e) => setFilterClassId(e.target.value)}
+            className="rounded-lg border border-nour-gold-300/60 bg-surface px-3 py-1.5 text-sm focus:border-nour-gold-500 focus:outline-none"
+          >
+            <option value="">{t.all} {t.classes}</option>
+            <option value="unassigned">{t.noClass}</option>
+            {classes
+              .filter((c) => c.isActive !== false)
+              .map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+          </select>
         </div>
-        {!showArchived && (
-          <button type="button" onClick={openAdd} className={buttonClass}>
-            {t.add}
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={exportGrid} className={ghostButtonClass}>
+            {t.export}
           </button>
-        )}
+          {!showArchived && (
+            <button type="button" onClick={openAdd} className={buttonClass}>
+              {t.add}
+            </button>
+          )}
+        </div>
       </div>
 
       {showForm && (

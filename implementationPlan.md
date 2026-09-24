@@ -19,6 +19,9 @@ Status: **IMPLEMENTED — all code phases complete; live against the real Fireba
 | 10 — Security | rules update (`classes`, `settings`) + server auth | ✅ (rules add classes/settings/attendance; server auth done) |
 | 11 — Testing | unit tests green (92); rules/e2e pending | 🔶 rules tests need Java emulator; e2e pending |
 | 12 — Order | (n/a) | — |
+| 13 — الرسوم (Fees) | Flat-rate pricing, 9-month invoice calendar | ✅ |
+| 14 — Polish (Round 2) | Login redirect, contrast fixes, kids count | ✅ |
+| 15 — المصاريف (Expenses) | School expenses tracker with filters and summary | ⬜ pending |
 
 **Live now:** Firestore client config in `.env.local`, Admin SDK verified (read-only
 connectivity), Email/Password enabled, bootstrap admin `admin@admin.com` created
@@ -191,11 +194,11 @@ Route `/ar/masjid/members` currently renders `MembersGrid` (read-only month grid
 
 ## PHASE 6 — المدرسة — School Management
 
-Reorganize `/ar/school/families` into **three tabs** using existing i18n labels:
+Reorganize `/ar/school/families` into **five tabs** using existing i18n labels:
 
 ```
 /ar/school/families
-  [ العائلات ] [ الطلاب ] [ الفصول ]
+  [ العائلات ] [ الطلاب ] [ الفصول ] [ المعلمون ] [ الرواتب ]
 ```
 
 Use a shared `Tabs` client component; keep the existing routes (`/school/students`, `/school/classes`) as deep-links into the same tabbed page (or redirect to the tab).
@@ -219,7 +222,7 @@ All assignments use stable IDs. Mutations: `recordFamily/updateFamily`, `recordS
 
 ## PHASE 7 — المعلمون والرواتب
 
-Route `/ar/school/teachers-salaries` (new). Two sub-views:
+Route `Integrated into /ar/school/families` (new). Two sub-views:
 
 ### Teachers
 - List (reuse `DirectoryList`), Add, Edit, Search, Archive (`isActive=false`).
@@ -228,11 +231,11 @@ Route `/ar/school/teachers-salaries` (new). Two sub-views:
 - Archived teachers hidden from class-assignment selector by default; salary history preserved.
 
 ### Salary table + Arabic monthly calendar
-- Table columns: `اسم المعلم | الراتب الشهري (€) | ملاحظات | المجموع` + month cells (يناير…ديسمبر).
+- Table columns: `اسم المعلم | الراتب الشهري (€) | ملاحظات | المجموع` + month cells from October to July (أكتوبر…يوليو).
 - The `"/"` column from the request is a **formatting artifact** (a separator), has no business meaning in the current model → **omit it**; document this decision.
 - `monthlySalaryCents` on `Teacher`; `salaryPayments/{id}` records `(teacherId, month, expectedCents, paidCents, status, paidAt?, notes)`.
 - Calendar uses `MonthGrid`-style layout with **checkboxes** per teacher×month; marking paid writes/updates a `SalaryPayment` (unique on `teacherId+month`, idempotent upsert).
-- Months in Arabic (يناير…ديسمبر), Latin digits for money via `Money`.
+- Months in Arabic (أكتوبر…يوليو), Latin digits for money via `Money`.
 - Store numeric cents, never formatted strings.
 
 ---
@@ -285,7 +288,7 @@ Route `/ar/school/teachers-salaries` (new). Two sub-views:
 4. **Members CRUD** — `/ar/masjid/members` add/edit/archive.
 5. **School tabs** — refactor `/ar/school/families` → العائلات / الطلاب / الفصول.
 6. **Families/Students/Classes CRUD + assignments** (family↔student, student↔class, teacher↔class).
-7. **Teachers & salaries** — `/ar/school/teachers-salaries`, salary table + Arabic monthly calendar + payment persistence.
+7. **Teachers & salaries** — `Integrated into /ar/school/families`, salary table + Arabic monthly calendar + payment persistence.
 8. **Settings admin-only** — edit forms + server + rules.
 9. **Rules update + tests** — `classes`/`settings` rules, extend rules tests, Playwright, Lighthouse.
 10. **Audit logging** — Cloud Function writes auditLog for the admin actions (reuse existing AuditLog type/viewer).
@@ -301,7 +304,7 @@ Route `/ar/school/teachers-salaries` (new). Two sub-views:
 - [ ] `/ar/masjid/members` add/edit/archive reusing `Member` fields
 - [ ] `/ar/school/families` tabs: العائلات / الطلاب / الفصول
 - [ ] Families/students/classes CRUD (incl. archive for classes) + student↔family, student↔class, teacher↔class (stable IDs)
-- [ ] `/ar/school/teachers-salaries` with teacher fields (incl. archive), monthly salary, notes, Arabic monthly calendar, persistent payment status
+- [ ] `Integrated into /ar/school/families` with teacher fields (incl. archive), monthly salary, notes, Arabic monthly calendar, persistent payment status
 - [ ] `/ar/settings` admin-only (UI + server + rules)
 - [ ] Firestore rules updated; no `allow read,write: if true`
 - [ ] RTL, dark-green theme, theme-aware Zellige preserved; responsive
@@ -319,3 +322,55 @@ Route `/ar/school/teachers-salaries` (new). Two sub-views:
 7. **Members have no contact fields** → do NOT invent; blocked on open question Q6 (documented).
 8. **No auth / no Admin SDK / no server actions today** → these are prerequisites, not optional.
 9. The `"/"` column in the salary request is a formatting artifact → omit.
+
+
+## PHASE 13 — الرسوم (Fees/Invoices Calendar)
+
+### Objective
+Implement the new Income/Fees tab (الرسوم) in the School section, featuring a calendar view for tracking monthly family payments, similar to the Teacher Salary calendar.
+
+### Requirements
+- **Pricing Formula Update**: Update src/lib/fees.ts so the Arabic fee is a flat rate based on total enrolled children (1 child = €10, 2 children = €20, 3+ children = €30), removing the previous per-child multiplier. English fee remains €10 per child.
+- **New UI Tab**: Add a new tab الرسوم (Fees) to SchoolManager.tsx.
+- **InvoicesCalendar Component**: Create a new component replacing the old InvoicesGrid. It will display:
+  - اسم ولي الأمر (Parent Name)
+  - عدد الأطفال (عربية) (Arabic Kids Count)
+  - رسوم العربية (€) (Arabic Fee)
+  - عدد الأطفال (إنجليزية) (English Kids Count)
+  - رسوم الإنجليزية (€) (English Fee)
+  - الإجمالي (€) (Total Monthly Fee)
+  - 9 checkable month columns (Oct to Jun) reflecting SCHOOL_GRID_MONTHS.
+  - المجموع (Grand Total Collected for the family).
+- **Firestore Integration**: Add upsertInvoice to src/lib/crud.ts to allow toggling a month's payment status via checkboxes, persisting paidCents and 	otalCents to the invoices collection.
+- **Settings Update**: Ensure SettingsForm.tsx defaults and displays reflect the new 10/20/30/10 pricing structure.
+
+
+## PHASE 14 — Polish & Bug Fixes (Round 2)
+
+### Objective
+Address user feedback regarding login redirection, UI color contrast, and data transparency in the Families tab.
+
+### Requirements
+1. **Login Redirect**: Update RequireAuth.tsx to detect if an authenticated user lands on the /login page and seamlessly redirect them to the main dashboard (/ar).
+2. **Color Contrast**: Update the statusClass definitions in MonthGrid.tsx to utilize high-contrast Tailwind colors in dark mode (e.g., dark:text-green-300 for paid and dark:text-yellow-300 for partial) to ensure legibility against the dark green background.
+3. **Families Tab Enhancement**: Import the useStudents hook into FamiliesTab.tsx to dynamically calculate and display a new column عدد الأطفال (Number of Kids) showing the count of active students per family.
+4. **Invoices Verification**: The logic in InvoicesCalendar.tsx already dynamically computes rabicCount based on total family students and englishCount based on the englishEnrolled flag. *Note: If calculations appear incorrect, the user must click 'Save' in the Settings tab to overwrite the old 20/18/15 pricing migrated in Phase 3 with the new 10/20/30 logic.*
+
+## PHASE 15 — المصاريف (School Expenses)
+
+### Objective
+Add a new tab المصاريف (Expenses) in the School section beside the الرواتب tab, to manage and track school/mosque-related expenses in a structured, filterable, and sortable financial table.
+
+### Requirements
+1. **Schema Update**: Add isActive?: boolean to the Expense interface in src/lib/schema.ts to support soft archiving without permanently destroying financial records.
+2. **CRUD Operations**: Add updateExpense, rchiveExpense, unarchiveExpense, and deleteExpensePermanent functions in src/lib/crud.ts (or mutations.ts) following the existing append-only and archive architecture. 
+3. **New UI Component (SchoolExpensesTab.tsx)**:
+   - **Table Structure**: Columns for تاريخ الصرف (Date), بيان المصروف (Description), المبلغ (€) (Amount), and ملاحظات (Notes).
+   - **Financial Formatting**: Use the ormatEUR utility so amounts are stored as integers (cents) in Firestore but displayed properly (e.g., 112,96 €).
+   - **Summary Cards**: A top summary section displaying إجمالي المصاريف (Total Expenses), مصاريف هذا الشهر (Expenses this month), and عدد المصاريف (Count of expenses), calculated dynamically from Firestore data.
+   - **Filters & Search**: Add a search bar (بحث في المصاريف...) for descriptions/notes, and date filters (من تاريخ, إلى تاريخ).
+   - **Sorting**: Allow sorting by Date and Amount (default: newest first).
+   - **Actions**: Add/Edit/Archive/Delete buttons with full ConfirmDialog integration.
+4. **School Navigation Integration**: Update SchoolManager.tsx to include the expenses tab alongside the existing tabs (amilies, students, classes, invoices, 	eachers, salary, expenses).
+5. **Theme & RTL Compliance**: Ensure the table follows the dark green theme (g-surface, 	ext-foreground, etc.), uses the Zellige background properly, and is fully responsive (horizontal scroll on mobile).
+6. **Authorization**: Expenses are financial data; ensure write access is restricted to isFinance() roles (Admin/Treasurer) as per the existing Firestore rules for the /expenses collection.

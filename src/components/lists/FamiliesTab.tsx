@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useFamilies } from "@/lib/data/hooks";
+import { useFamilies, useStudents } from "@/lib/data/hooks";
 import {
   recordFamily,
   updateFamily,
@@ -17,6 +17,7 @@ import type { Family } from "@/lib/schema";
 
 export function FamiliesTab({ t }: { t: Dictionary }) {
   const { data = [], isLoading } = useFamilies();
+  const { data: students = [] } = useStudents();
   const { busy, error, saved, runAndInvalidate } = useSubmit();
 
   const [showArchived, setShowArchived] = useState(false);
@@ -169,12 +170,15 @@ export function FamiliesTab({ t }: { t: Dictionary }) {
             <thead>
               <tr className="border-b border-nour-gold-300/40 text-muted">
                 <th className="px-4 py-3 text-start font-medium">{t.name}</th>
+                <th className="px-4 py-3 text-start font-medium">{t.kidsCount}</th>
                 <th className="px-4 py-3 text-start font-medium">{t.phone}</th>
                 <th className="px-4 py-3 text-start font-medium">{t.actions}</th>
               </tr>
             </thead>
             <tbody>
-              {visible.map((f) => (
+              {visible.map((f) => {
+                const familyStudents = students.filter(s => s.familyId === f.id && s.isActive !== false);
+                return (
                 <tr
                   key={f.id}
                   className="border-b border-nour-gold-300/20 last:border-0"
@@ -186,6 +190,9 @@ export function FamiliesTab({ t }: { t: Dictionary }) {
                         {t.archived}
                       </span>
                     )}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {familyStudents.length > 0 ? familyStudents.length : "—"}
                   </td>
                   <td className="px-4 py-3">
                     <span dir="ltr">{f.phone ?? "—"}</span>
@@ -227,10 +234,11 @@ export function FamiliesTab({ t }: { t: Dictionary }) {
                           </button>
                         </>
                       )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

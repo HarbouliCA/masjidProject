@@ -6,6 +6,7 @@ import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { getFirestoreDb } from "@/lib/firestore/client";
 import { stripUndefined } from "@/lib/sanitize";
 import { recordPayment, type PaymentMethod } from "@/lib/mutations";
+import { parseEURToCents } from "@/lib/money";
 import type { Dictionary } from "@/i18n";
 import type { Cents, Scope } from "@/lib/schema";
 
@@ -49,7 +50,7 @@ export function RecordPaymentDialog({
   const ctx = context;
 
   async function submit() {
-    const cents = Math.round(Number(amount) * 100);
+    const cents = parseEURToCents(amount);
     if (!Number.isFinite(cents) || cents < 0) {
       setError(t.error);
       return;
@@ -116,7 +117,7 @@ export function RecordPaymentDialog({
       }
       queryClient.invalidateQueries();
       onClose();
-    } catch (e) {
+    } catch {
       setError(t.error);
     } finally {
       setSaving(false);

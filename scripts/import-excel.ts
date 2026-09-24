@@ -31,6 +31,7 @@ import type {
   PledgeMonth,
   Student,
   Transfer,
+  CampaignDonor,
 } from "../src/lib/schema";
 
 const ROOT = resolve(__dirname, "..");
@@ -297,7 +298,7 @@ function parseMasjid() {
       method: "cash",
       channel: c.channel,
       donorType: c.donorType,
-      donorName: c.anonymous ? name : undefined,
+      donorName: name || undefined,
       campaignId: c.campaign,
       fundId: c.fund,
       receiptIssued: false,
@@ -308,14 +309,19 @@ function parseMasjid() {
 
   // حملة رمضان 2026 — donor breakdown of the €4,750 lump (already in التبرعات).
   const ramRows = readRows(wb.Sheets["حملة رمضان 2026"]);
-  const campaignDonors: { name: string; amountCents: Cents }[] = [];
+  const campaignDonors: CampaignDonor[] = [];
   let campaignLump = 0;
   for (let i = 2; i < ramRows.length; i++) {
     const r = ramRows[i];
     const name = cleanArabic(r[1]);
     const amount = toMoneyCents(r[2]) ?? 0;
     if (!name && amount === 0) continue;
-    campaignDonors.push({ name, amountCents: amount });
+    campaignDonors.push({
+      id: `campaign-donor-${campaignDonors.length + 1}`,
+      campaignId: "ramadan",
+      name,
+      amountCents: amount,
+    });
     campaignLump += amount;
   }
   campaignBuckets.ramadan += campaignLump;
@@ -397,6 +403,7 @@ function classifyDonation(date: string, name: string, notes: string): {
   if (/المشروع|ت\.المشروع|ت\s*[,، ]?\s*المشروع/.test(n)) return { channel: "campaign", donorType: "individual", anonymous: false, campaign: "project", needsReview: false };
   if (/محسن|محسنة/.test(name)) return { channel: "direct", donorType: "anonymous", anonymous: true, needsReview: false };
   if (/مسجد|سان/.test(n)) return { channel: "external", donorType: "mosque", anonymous: false, needsReview: false };
+  if (/حملة/.test(name)) return { channel: "ramadan_campaign", donorType: "organization", anonymous: false, campaign: "ramadan", needsReview: false };
   if (date >= "2026-02-17" && date <= "2026-03-18") return { channel: "ramadan_daily", donorType: "individual", anonymous: false, campaign: "ramadan", needsReview: false };
   return { channel: "direct", donorType: "individual", anonymous: false, needsReview: true };
 }
@@ -456,6 +463,7 @@ function writeToFirestore(
     await put("members", masjid.members);
     await put("pledgeMonths", masjid.pledgeMonths);
     await put("donations", masjid.donations);
+    await put("campaignDonors", masjid.campaignDonors);
     await put("families", school.familyList);
     await put("students", [...school.students, ...school.reservedStudents]);
     await put("invoices", school.invoices);

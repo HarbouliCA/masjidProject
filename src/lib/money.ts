@@ -24,9 +24,17 @@ export function formatEUR(cents: number): string {
 /**
  * Parse a user-entered euro string into integer cents.
  * Accepts "1234", "1234.56", "1234,56" and "1.234,56" (grouping + comma).
+ * Also normalizes Arabic-Indic/Persian digits (٠-٩ / ۰-۹) and the Arabic
+ * decimal separator (٫) so an Arabic-keyboard entry still parses correctly.
  */
 export function parseEURToCents(input: string): number {
-  const cleaned = input
+  const normalized = input
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
+    .replace(/٫/g, ".")
+    .replace(/٬/g, ",");
+
+  const cleaned = normalized
     .trim()
     .replace(/€/g, "")
     .replace(/\s/g, "");
