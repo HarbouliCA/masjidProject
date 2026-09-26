@@ -8,16 +8,13 @@ export const DEFAULT_PRICING = {
 } as const;
 
 /**
- * Arabic fee is charged per child, at the tier rate selected by the number of
- * Arabic children (1 → oneChild, 2 → twoChildren, 3+ → threePlusChildren).
- * e.g. 2 children ⇒ twoChildren × 2.
+ * Arabic fee is charged per child at €10 (1000 cents) * number of kids.
  */
 export function arabicFeeCents(children: number, settings?: Settings | null): Cents {
-  const pricing = settings?.pricing ?? DEFAULT_PRICING;
   if (children <= 0) return 0;
-  if (children === 1) return pricing.oneChild;
-  if (children === 2) return pricing.twoChildren * 2;
-  return pricing.threePlusChildren * children;
+  const pricing = settings?.pricing ?? DEFAULT_PRICING;
+  const perChild = pricing.oneChild ?? 1000;
+  return perChild * children;
 }
 
 export function englishFeeCents(englishChildren: number, settings?: Settings | null): Cents {
