@@ -32,6 +32,8 @@ export interface MemberInput {
   fullName: string;
   monthlyPledgeCents: Cents;
   startMonth?: string;
+  phone?: string;
+  nie?: string;
   notes?: string;
 }
 
@@ -45,6 +47,8 @@ export function buildMember(input: MemberInput): Omit<Member, "id"> {
     monthlyPledgeCents: input.monthlyPledgeCents,
     startMonth: input.startMonth ?? "2026-01",
     status: "never_paid",
+    phone: input.phone?.trim() || undefined,
+    nie: input.nie?.trim() || undefined,
     notes: input.notes ?? "",
     isActive: true,
   };
@@ -59,7 +63,7 @@ export async function recordMember(input: MemberInput): Promise<string | null> {
 
 export async function updateMember(
   id: string,
-  patch: Partial<Omit<Member, "id">>
+  patch: Record<string, unknown>
 ): Promise<void> {
   const db = getFirestoreDb();
   if (!db) return;

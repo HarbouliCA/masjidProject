@@ -30,6 +30,8 @@ export function FridayTab({ t }: { t: Dictionary }) {
   const [date, setDate] = useState("");
   const [amount, setAmount] = useState("");
   const [notes, setNotes] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [toArchive, setToArchive] = useState<Donation | null>(null);
   const [toDelete, setToDelete] = useState<Donation | null>(null);
 
@@ -38,7 +40,13 @@ export function FridayTab({ t }: { t: Dictionary }) {
     showArchived ? d.isActive === false : d.isActive !== false
   );
 
-  const sorted = [...activeDonations].sort((a, b) =>
+  const filtered = activeDonations.filter((d) => {
+    const matchFrom = !fromDate || (d.date && d.date >= fromDate);
+    const matchTo = !toDate || (d.date && d.date <= toDate);
+    return matchFrom && matchTo;
+  });
+
+  const sorted = [...filtered].sort((a, b) =>
     (a.date ?? "").localeCompare(b.date ?? "")
   );
 
@@ -114,6 +122,14 @@ export function FridayTab({ t }: { t: Dictionary }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted">{t.fromDate}</span>
+          <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className={inputClass} />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted">{t.toDate}</span>
+          <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className={inputClass} />
+        </div>
         {archivedCount > 0 && (
           <button type="button" onClick={() => setShowArchived((v) => !v)} className={ghostButtonClass}>
             {showArchived ? t.hideArchived : `${t.showArchived} (${archivedCount})`}

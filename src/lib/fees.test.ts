@@ -1,22 +1,23 @@
 import { describe, it, expect } from "vitest";
 import {
   DEFAULT_PRICING,
-  arabicFeeFlatCents,
+  arabicFeeCents,
   assessFees,
 } from "./fees";
+import type { Settings } from "./schema";
 
-describe("arabicFeeFlatCents", () => {
+describe("arabicFeeCents", () => {
   it("charges €10 for 1 child", () => {
-    expect(arabicFeeFlatCents(1)).toBe(DEFAULT_PRICING.oneChild);
+    expect(arabicFeeCents(1)).toBe(DEFAULT_PRICING.oneChild);
   });
 
-  it("charges €20 total for 2 children", () => {
-    expect(arabicFeeFlatCents(2)).toBe(DEFAULT_PRICING.twoChildren);
+  it("charges €40 for 2 children (€20 each)", () => {
+    expect(arabicFeeCents(2)).toBe(DEFAULT_PRICING.twoChildren * 2);
   });
 
-  it("charges €30 total for 3+ children", () => {
-    expect(arabicFeeFlatCents(3)).toBe(DEFAULT_PRICING.threePlusChildren);
-    expect(arabicFeeFlatCents(5)).toBe(DEFAULT_PRICING.threePlusChildren);
+  it("charges €30 per child for 3+ children", () => {
+    expect(arabicFeeCents(3)).toBe(DEFAULT_PRICING.threePlusChildren * 3);
+    expect(arabicFeeCents(5)).toBe(DEFAULT_PRICING.threePlusChildren * 5);
   });
 });
 
@@ -30,21 +31,53 @@ describe("assessFees", () => {
     });
   });
 
-  it("calculates 3 arabic = €30", () => {
-    expect(assessFees(3, 0).totalCents).toBe(3000);
+  it("calculates 2 arabic = €40 (20 * 2)", () => {
+    expect(assessFees(2, 0).totalCents).toBe(4000);
   });
 
-  it("calculates 2 arabic + 2 english = €40", () => {
-    expect(assessFees(2, 2).totalCents).toBe(4000); // 20 + 20
+  it("calculates 2 arabic + 2 english = €60", () => {
+    expect(assessFees(2, 2).totalCents).toBe(6000); // 40 + 20
   });
 
-  it("calculates 4 arabic = €30", () => {
-    expect(assessFees(4, 0).totalCents).toBe(3000);
+  it("calculates 4 arabic = €120 (30 * 4)", () => {
+    expect(assessFees(4, 0).totalCents).toBe(12000);
   });
 
   it("flags anomaly if recorded total doesn't match", () => {
     const a = assessFees(2, 0, null, 2500); // Pass null for settings, 2500 for recordedTotal
-    expect(a.totalCents).toBe(2000);
+    expect(a.totalCents).toBe(4000);
     expect(a.isManualOverride).toBe(true);
+  });
+});
+
+describe("custom settings", () => {
+  const settings: Settings = {
+    pricing: {
+      oneChild: 1500,
+      twoChildren: 2500,
+      threePlusChildren: 3500,
+      englishPerChild: 1200,
+    },
+    organization: {
+      iban: "",
+      titular: "",
+      concepto: "",
+      fiscalYear: "2026",
+      openingBalances: { masjid: 0, school: 0 },
+    },
+  };
+
+  it("uses the settings pricing instead of defaults", () => {
+    expect(arabicFeeCents(2, settings)).toBe(2500 * 2);
+    expect(assessFees(2, 1, settings).totalCents).toBe(2500 * 2 + 1200);
+  });
+
+  it("reflects a changed setting value", () => {
+    const changed: Settings = {
+      ...settings,
+      pricing: { ...settings.pricing, twoChildren: 4000 },
+    };
+    expect(assessFees(2, 0, settings).totalCents).toBe(5000);
+    expect(assessFees(2, 0, changed).totalCents).toBe(8000);
   });
 });

@@ -1,36 +1,124 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# منصة مسجد النور — Masjid an-Nour Platform
 
-## Getting Started
+Arabic-first (RTL) management platform for the Comunitat Islàmica del Solsonès —
+one ledger, two books (المسجد + المدرسة), built with Next.js 15 + Firebase.
 
-First, run the development server:
+## Prerequisites
+
+- Node.js **>= 18.18.0** (see `engines` in `package.json`).
+- A Firebase project (`masjid-nour`) with Firestore + Auth (custom claims `role`, `familyId`).
+
+## Environment variables
+
+Copy `.env.example` to `.env.local` (dev) and `.env.production` (hosting) and fill in:
+
+| Variable | When | Purpose |
+| --- | --- | --- |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` … `APP_ID` | build time | Firebase client config (inlined into the client bundle) |
+| `NEXT_PUBLIC_FIREBASE_APP_CHECK_KEY` | build time | App Check (reCAPTCHA v3 site key) |
+| `FIREBASE_SERVICE_ACCOUNT` | runtime | Server-only Admin SDK JSON (server actions: user/role management) |
+| `GOOGLE_APPLICATION_CREDENTIALS` | runtime | Alternative: path to the service-account key file |
+
+> `NEXT_PUBLIC_*` are baked in at **build time**; `FIREBASE_SERVICE_ACCOUNT` /
+> `GOOGLE_APPLICATION_CREDENTIALS` are read at **runtime** by server actions.
+
+## Local development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000/ar
+npm run typecheck
+npm run lint
+npm test           # vitest unit tests
+npm run test:rules # Firestore rules tests (needs emulator)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Building
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`next.config.ts` sets `output: "standalone"`, so the build also emits a
+self-contained server at `.next/standalone/` (no `node_modules` required on the
+target machine).
 
-## Learn More
+## Deploying to Hostinger (VPS / Node.js)
 
-To learn more about Next.js, take a look at the following resources:
+This is a Node.js app, so use a **VPS** plan (or a Node.js-enabled plan) — not
+the PHP-only shared hosting.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Build** on the server (or build locally and upload the artifacts):
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   ```bash
+   npm ci
+   NEXT_PUBLIC_FIREBASE_API_KEY=… \
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=… \
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=masjid-nour \
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=… \
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=… \
+   NEXT_PUBLIC_FIREBASE_APP_ID=… \
+   NEXT_PUBLIC_FIREBASE_APP_CHECK_KEY=… \
+   npm run build
+   ```
 
-## Deploy on Vercel
+   Or store them in `.env.production` and run `npm run build`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+2. **Assemble the standalone output** (copies `public/` and `.next/static/`):
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   ```bash
+   npm run deploy:copy
+   ```
+
+3. **Set runtime env** (for server actions). Provide `FIREBASE_SERVICE_ACCOUNT`
+   as a JSON string in the process environment (e.g. in the PM2 ecosystem file,
+   or `export` before starting).
+
+4. **Run with PM2**:
+
+   ```bash
+   npm i -g pm2
+   pm2 start ecosystem.config.cjs
+   pm2 save && pm2 startup
+   ```
+
+   The app listens on `PORT=3000` bound to `0.0.0.0`.
+
+5. **Reverse proxy (Nginx / Hostinger)** — forward a domain (or subdomain) to
+   `127.0.0.1:3000`:
+
+   ```nginx
+   server {
+     listen 80;
+     server_name your-domain.com;
+
+     location / {
+       proxy_pass http://127.0.0.1:3000;
+       proxy_http_version 1.1;
+       proxy_set_header Upgrade $http_upgrade;
+       proxy_set_header Connection "upgrade";
+       proxy_set_header Host $host;
+       proxy_set_header X-Real-IP $remote_addr;
+       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+       proxy_set_header X-Forwarded-Proto $scheme;
+     }
+   }
+   ```
+
+   Then enable HTTPS via Hostinger's SSL / Certbot.
+
+### Updating an existing deployment
+
+```bash
+git pull
+npm ci
+npm run build
+npm run deploy:copy
+pm2 restart masjid-nour
+```
+
+## Data import
+
+See `scripts/import-excel.ts` (dry-run by default; `--write` seeds Firestore).
+Service-account credentials are required only for the import and deploy scripts,
+never bundled into the client.

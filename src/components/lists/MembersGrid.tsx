@@ -26,6 +26,7 @@ export function MembersGrid({ t }: { t: Dictionary }) {
   const rows: MonthGridRow[] = visibleMembers.map((m) => ({
     id: m.id,
     label: m.fullName + (m.isActive === false ? ` (${t.archived})` : ""),
+    hint: memberHint(m),
     cells: pledgeMonths
       .filter((p) => p.memberId === m.id)
       .map((p) => ({
@@ -35,6 +36,13 @@ export function MembersGrid({ t }: { t: Dictionary }) {
         obligationId: p.id,
       })),
   }));
+
+  function memberHint(m: Member): string | undefined {
+    const parts: string[] = [];
+    if (m.phone) parts.push(`${t.phone}: ${m.phone}`);
+    if (m.nie) parts.push(`${t.nieDni}: ${m.nie}`);
+    return parts.length ? parts.join("\n") : undefined;
+  }
 
   function exportGrid() {
     const header = [t.name, ...MASJID_GRID_MONTHS.map((m) => m.label)];

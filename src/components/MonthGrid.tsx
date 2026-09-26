@@ -13,6 +13,7 @@ export interface MonthCell {
 export interface MonthGridRow {
   id: string;
   label: string;
+  hint?: string;
   cells: MonthCell[];
 }
 
@@ -71,12 +72,15 @@ export function MonthGrid({
                   <button
                     type="button"
                     onClick={() => onLabelClick(row.id)}
+                    title={row.hint}
                     className="text-start hover:text-nour-gold-600"
                   >
                     <span dir="auto">{row.label}</span>
                   </button>
                 ) : (
-                  <span dir="auto">{row.label}</span>
+                  <span dir="auto" title={row.hint}>
+                    {row.label}
+                  </span>
                 )}
               </td>
               {months.map((m) => {

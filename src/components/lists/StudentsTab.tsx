@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { deleteField } from "firebase/firestore";
 import { useStudents, useFamilies, useClasses } from "@/lib/data/hooks";
 import {
@@ -123,6 +123,88 @@ export function StudentsTab({ t }: { t: Dictionary }) {
     });
   }
 
+  const formContent = (
+    <div className="space-y-2">
+      <Field label={t.name}>
+        <input
+          dir="auto"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className={inputClass}
+        />
+      </Field>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Field label={t.level}>
+          <input
+            dir="auto"
+            value={level}
+            onChange={(e) => setLevel(e.target.value)}
+            className={inputClass}
+          />
+        </Field>
+        <Field label={t.family}>
+          <select
+            value={familyId}
+            onChange={(e) => setFamilyId(e.target.value)}
+            className={inputClass}
+          >
+            <option value="">{t.noFamily}</option>
+            {families
+              .filter((f) => f.isActive !== false)
+              .map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.parentName}
+                </option>
+              ))}
+          </select>
+        </Field>
+        <Field label={t.classes}>
+          <select
+            value={classId}
+            onChange={(e) => setClassId(e.target.value)}
+            className={inputClass}
+          >
+            <option value="">{t.noClass}</option>
+            {classes
+              .filter((c) => c.isActive !== false)
+              .map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+          </select>
+        </Field>
+        <label className="flex items-end gap-2 pb-2 text-sm text-muted">
+          <input
+            type="checkbox"
+            checked={english}
+            onChange={(e) => setEnglish(e.target.checked)}
+          />
+          {t.english}
+        </label>
+      </div>
+      {error && <p className="text-sm text-danger">{error}</p>}
+      <div className="flex items-center justify-end gap-2">
+        {saved && <span className="text-sm text-success">{t.saved}</span>}
+        <button
+          type="button"
+          onClick={() => setShowForm(false)}
+          className={ghostButtonClass}
+        >
+          {t.cancel}
+        </button>
+        <button
+          type="button"
+          onClick={submit}
+          disabled={busy || !name.trim() || !familyId}
+          className={buttonClass}
+        >
+          {busy ? t.saving : t.save}
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -162,85 +244,9 @@ export function StudentsTab({ t }: { t: Dictionary }) {
         </div>
       </div>
 
-      {showForm && (
-        <div className="space-y-2 rounded-xl border border-nour-gold-300/40 bg-surface p-4">
-          <Field label={t.name}>
-            <input
-              dir="auto"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className={inputClass}
-            />
-          </Field>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Field label={t.level}>
-              <input
-                dir="auto"
-                value={level}
-                onChange={(e) => setLevel(e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-            <Field label={t.family}>
-              <select
-                value={familyId}
-                onChange={(e) => setFamilyId(e.target.value)}
-                className={inputClass}
-              >
-                <option value="">{t.noFamily}</option>
-                {families
-                  .filter((f) => f.isActive !== false)
-                  .map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.parentName}
-                    </option>
-                  ))}
-              </select>
-            </Field>
-            <Field label={t.classes}>
-              <select
-                value={classId}
-                onChange={(e) => setClassId(e.target.value)}
-                className={inputClass}
-              >
-                <option value="">{t.noClass}</option>
-                {classes
-                  .filter((c) => c.isActive !== false)
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-              </select>
-            </Field>
-            <label className="flex items-end gap-2 pb-2 text-sm text-muted">
-              <input
-                type="checkbox"
-                checked={english}
-                onChange={(e) => setEnglish(e.target.checked)}
-              />
-              {t.english}
-            </label>
-          </div>
-          {error && <p className="text-sm text-danger">{error}</p>}
-          <div className="flex items-center justify-end gap-2">
-            {saved && <span className="text-sm text-success">{t.saved}</span>}
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              className={ghostButtonClass}
-            >
-              {t.cancel}
-            </button>
-            <button
-              type="button"
-              onClick={submit}
-              disabled={busy || !name.trim() || !familyId}
-              className={buttonClass}
-            >
-              {busy ? t.saving : t.save}
-            </button>
-          </div>
+      {showForm && !editing && (
+        <div className="rounded-xl border border-nour-gold-300/40 bg-surface p-4">
+          {formContent}
         </div>
       )}
 
@@ -263,10 +269,8 @@ export function StudentsTab({ t }: { t: Dictionary }) {
             </thead>
             <tbody>
               {visible.map((s) => (
-                <tr
-                  key={s.id}
-                  className="border-b border-nour-gold-300/20 last:border-0"
-                >
+                <Fragment key={s.id}>
+                  <tr className="border-b border-nour-gold-300/20 last:border-0">
                   <td className="px-4 py-3">
                     <span dir="auto">{s.name}</span>
                     {s.isActive === false && (
@@ -317,6 +321,14 @@ export function StudentsTab({ t }: { t: Dictionary }) {
                     </div>
                   </td>
                 </tr>
+                  {showForm && editing?.id === s.id && (
+                    <tr className="border-b border-nour-gold-300/20 bg-nour-gold-300/5">
+                      <td colSpan={4} className="p-4">
+                        {formContent}
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
             </tbody>
           </table>

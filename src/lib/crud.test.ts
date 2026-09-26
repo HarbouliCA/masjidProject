@@ -24,6 +24,17 @@ describe("buildMember", () => {
   it("rejects a non-positive pledge", () => {
     expect(() => buildMember({ fullName: "x", monthlyPledgeCents: 0 })).toThrow();
   });
+
+  it("keeps phone and NIE/DNI when provided", () => {
+    const m = buildMember({
+      fullName: "محمد بوصحابة",
+      monthlyPledgeCents: 1000,
+      phone: " 612000000 ",
+      nie: " X1234567Z ",
+    });
+    expect(m.phone).toBe("612000000");
+    expect(m.nie).toBe("X1234567Z");
+  });
 });
 
 describe("buildFamily", () => {

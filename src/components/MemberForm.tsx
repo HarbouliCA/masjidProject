@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { deleteField } from "firebase/firestore";
 import { recordMember, updateMember, archiveMember, unarchiveMember, deleteMemberPermanent } from "@/lib/crud";
 import { Field, inputClass, buttonClass, ghostButtonClass } from "./forms/shared";
 import { useSubmit } from "./forms/useSubmit";
@@ -21,6 +22,8 @@ export function MemberForm({
 }) {
   const [fullName, setFullName] = useState("");
   const [pledge, setPledge] = useState("10");
+  const [phone, setPhone] = useState("");
+  const [nie, setNie] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { busy, error, saved, runAndInvalidate } = useSubmit();
@@ -29,6 +32,8 @@ export function MemberForm({
     if (open) {
       setFullName(member?.fullName ?? "");
       setPledge(member ? (member.monthlyPledgeCents / 100).toString() : "10");
+      setPhone(member?.phone ?? "");
+      setNie(member?.nie ?? "");
       setConfirmOpen(false);
       setDeleteOpen(false);
     }
@@ -41,9 +46,19 @@ export function MemberForm({
     if (!fullName.trim() || !Number.isFinite(cents) || cents <= 0) return;
     await runAndInvalidate(async () => {
       if (member) {
-        await updateMember(member.id, { fullName: fullName.trim(), monthlyPledgeCents: cents });
+        await updateMember(member.id, {
+          fullName: fullName.trim(),
+          monthlyPledgeCents: cents,
+          phone: phone.trim() || deleteField(),
+          nie: nie.trim() || deleteField(),
+        });
       } else {
-        await recordMember({ fullName: fullName.trim(), monthlyPledgeCents: cents });
+        await recordMember({
+          fullName: fullName.trim(),
+          monthlyPledgeCents: cents,
+          phone: phone.trim() || undefined,
+          nie: nie.trim() || undefined,
+        });
       }
       onClose();
     });
@@ -112,6 +127,22 @@ export function MemberForm({
                 required
                 value={pledge}
                 onChange={(e) => setPledge(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label={t.phone}>
+              <input
+                dir="ltr"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label={t.nieDni}>
+              <input
+                dir="ltr"
+                value={nie}
+                onChange={(e) => setNie(e.target.value)}
                 className={inputClass}
               />
             </Field>

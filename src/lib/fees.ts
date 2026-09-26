@@ -7,12 +7,17 @@ export const DEFAULT_PRICING = {
   englishPerChild: 1000,
 } as const;
 
-export function arabicFeeFlatCents(children: number, settings?: Settings | null): Cents {
+/**
+ * Arabic fee is charged per child, at the tier rate selected by the number of
+ * Arabic children (1 → oneChild, 2 → twoChildren, 3+ → threePlusChildren).
+ * e.g. 2 children ⇒ twoChildren × 2.
+ */
+export function arabicFeeCents(children: number, settings?: Settings | null): Cents {
   const pricing = settings?.pricing ?? DEFAULT_PRICING;
   if (children <= 0) return 0;
   if (children === 1) return pricing.oneChild;
-  if (children === 2) return pricing.twoChildren;
-  return pricing.threePlusChildren;
+  if (children === 2) return pricing.twoChildren * 2;
+  return pricing.threePlusChildren * children;
 }
 
 export function englishFeeCents(englishChildren: number, settings?: Settings | null): Cents {
@@ -33,7 +38,7 @@ export function assessFees(
   settings?: Settings | null,
   recordedTotalCents?: Cents
 ): FeeAssessment {
-  const arabic = arabicFeeFlatCents(arabicChildren, settings);
+  const arabic = arabicFeeCents(arabicChildren, settings);
   const english = englishFeeCents(englishChildren, settings);
   const totalCents = arabic + english;
   const isManualOverride =

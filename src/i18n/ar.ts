@@ -68,6 +68,7 @@ export const ar = {
   status_left: "منسحب",
   name: "الاسم",
   phone: "رقم الهاتف",
+  nieDni: "NIE / DNI",
   level: "المستوى",
   english: "الإنجليزية",
   reserved: "محجوز",

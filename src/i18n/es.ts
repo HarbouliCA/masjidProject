@@ -66,6 +66,7 @@ export const es: Dictionary = {
   status_left: "Se fue",
   name: "Nombre",
   phone: "Teléfono",
+  nieDni: "NIE / DNI",
   level: "Nivel",
   english: "Inglés",
   reserved: "Reservado",

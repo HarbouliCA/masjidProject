@@ -37,6 +37,8 @@ export interface Member {
   startMonth: MonthKey;
   endMonth?: MonthKey;
   status: MemberStatus; // derived, not typed by hand
+  phone?: string;
+  nie?: string;
   notes: string;
   isActive: boolean;
 }
