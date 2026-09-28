@@ -15,7 +15,7 @@ export function AuthStatus({ t, locale }: { t: Dictionary; locale: string }) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="max-w-[10rem] truncate text-xs text-muted" dir="ltr">
+      <span className="max-w-[7rem] sm:max-w-[12rem] truncate text-xs font-medium text-foreground/75" dir="ltr">
         {user.email}
       </span>
       <button
@@ -26,7 +26,7 @@ export function AuthStatus({ t, locale }: { t: Dictionary; locale: string }) {
             router.replace(`/${locale}/login`);
           }
         }}
-        className="rounded-lg border border-nour-gold-300/60 px-3 py-1.5 text-sm text-muted hover:text-nour-gold-600"
+        className="inline-flex items-center rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs sm:text-sm font-medium text-foreground/90 shadow-xs hover:bg-surface-hover hover:text-foreground hover:border-nour-gold-500/50 transition-colors"
       >
         {t.logout}
       </button>

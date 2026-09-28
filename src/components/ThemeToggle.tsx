@@ -24,9 +24,13 @@ export function ThemeToggle({ t }: { t: Dictionary }) {
     <button
       type="button"
       onClick={toggle}
-      className="rounded-lg border border-nour-gold-300/60 px-3 py-1.5 text-sm text-nour-stone-400 hover:text-nour-gold-600"
+      className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs sm:text-sm font-medium text-foreground/90 shadow-xs hover:bg-surface-hover hover:text-foreground hover:border-nour-gold-500/50 transition-colors focus:outline-none focus:ring-2 focus:ring-nour-gold-500/40"
+      aria-label={dark ? t.lightMode : t.darkMode}
     >
-      {dark ? t.lightMode : t.darkMode}
+      <span className="text-sm" aria-hidden="true">
+        {dark ? "☀️" : "🌙"}
+      </span>
+      <span>{dark ? t.lightMode : t.darkMode}</span>
     </button>
   );
 }

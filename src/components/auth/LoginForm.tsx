@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { getFirebaseAuth } from "@/lib/firebase/auth";
@@ -58,8 +59,21 @@ export function LoginForm({ t, locale }: { t: Dictionary; locale: string }) {
   }
 
   return (
-    <div className="mx-auto max-w-sm rounded-xl border border-nour-gold-300/40 bg-surface p-6">
-      <h1 className="font-heading text-lg font-semibold">{t.login}</h1>
+    <div className="mx-auto max-w-sm rounded-xl border border-nour-gold-300/40 bg-surface p-6 shadow-sm">
+      <div className="mb-5 flex flex-col items-center text-center">
+        <div className="relative mb-3 h-16 w-16 shrink-0 rounded-full bg-white p-1 shadow-sm ring-1 ring-nour-gold-500/30">
+          <Image
+            src="/logo.png"
+            alt={t.appName}
+            fill
+            sizes="64px"
+            priority
+            className="object-contain p-0.5"
+          />
+        </div>
+        <h1 className="font-heading text-xl font-bold text-foreground">{t.appName}</h1>
+        <p className="mt-1 text-xs text-muted">{t.login}</p>
+      </div>
       <div className="mt-4 space-y-3">
         <Field label={t.email}>
           <input dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />

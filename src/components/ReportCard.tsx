@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useStudents, useGrades, useAttendance } from "@/lib/data/hooks";
 import { formatDate } from "@/lib/dates";
 import type { Dictionary, TranslationKey } from "@/i18n";
@@ -37,8 +38,18 @@ export function ReportCard({
 
       <div className="rounded-xl border border-nour-gold-300/40 bg-surface p-8">
         <header className="border-b-2 border-nour-gold-500 pb-4 text-center">
-          <h1 className="font-heading text-2xl font-semibold">{t.appName}</h1>
-          <p className="mt-1 text-sm text-nour-stone-400">{t.reportCard}</p>
+          <div className="mx-auto mb-3 relative flex h-16 w-16 items-center justify-center rounded-full bg-white p-1 shadow-xs ring-1 ring-nour-gold-500/30">
+            <Image
+              src="/logo.png"
+              alt={t.appName}
+              fill
+              sizes="64px"
+              priority
+              className="object-contain p-0.5"
+            />
+          </div>
+          <h1 className="font-heading text-2xl font-semibold text-foreground">{t.appName}</h1>
+          <p className="mt-1 text-sm text-muted">{t.reportCard}</p>
         </header>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
