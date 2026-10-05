@@ -14,6 +14,8 @@ import { Field, inputClass, buttonClass, ghostButtonClass } from "../forms/share
 import { useSubmit } from "../forms/useSubmit";
 import { ConfirmDialog } from "../ConfirmDialog";
 import { exportXLSX } from "@/lib/export";
+import { SearchInput } from "../SearchInput";
+import { matchesSearch } from "@/lib/search";
 import type { Dictionary } from "@/i18n";
 import type { Student } from "@/lib/schema";
 
@@ -32,6 +34,7 @@ export function StudentsTab({ t }: { t: Dictionary }) {
   const [familyId, setFamilyId] = useState("");
   const [classId, setClassId] = useState("");
   const [filterClassId, setFilterClassId] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [toArchive, setToArchive] = useState<Student | null>(null);
   const [toDelete, setToDelete] = useState<Student | null>(null);
@@ -45,7 +48,8 @@ export function StudentsTab({ t }: { t: Dictionary }) {
   const visible = data.filter((s) => {
     const activeMatch = showArchived ? s.isActive === false : s.isActive !== false;
     const classMatch = filterClassId === "unassigned" ? !s.classId : filterClassId ? s.classId === filterClassId : true;
-    return activeMatch && classMatch;
+    const searchMatch = matchesSearch(searchQuery, s.name);
+    return activeMatch && classMatch && searchMatch;
   });
 
   function exportGrid() {
@@ -231,6 +235,11 @@ export function StudentsTab({ t }: { t: Dictionary }) {
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
           </select>
+          <SearchInput
+            t={t}
+            value={searchQuery}
+            onChange={setSearchQuery}
+          />
         </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={exportGrid} className={ghostButtonClass}>

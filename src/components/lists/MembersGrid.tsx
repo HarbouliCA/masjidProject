@@ -7,6 +7,8 @@ import { RecordPaymentDialog, type PaymentContext } from "../RecordPaymentDialog
 import { MemberForm } from "../MemberForm";
 import { MASJID_GRID_MONTHS } from "@/lib/grid";
 import { exportXLSX } from "@/lib/export";
+import { SearchInput } from "../SearchInput";
+import { matchesSearch } from "@/lib/search";
 import type { Dictionary } from "@/i18n";
 import type { Member } from "@/lib/schema";
 
@@ -17,11 +19,16 @@ export function MembersGrid({ t }: { t: Dictionary }) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const archivedCount = members.filter((m) => m.isActive === false).length;
-  const visibleMembers = members.filter((m) =>
-    showArchived ? m.isActive === false : m.isActive !== false
-  );
+  const visibleMembers = members.filter((m) => {
+    const activeMatch = showArchived ? m.isActive === false : m.isActive !== false;
+    const searchMatch =
+      matchesSearch(searchQuery, m.fullName) ||
+      (m.memberNumber && m.memberNumber.toString().includes(searchQuery.trim()));
+    return activeMatch && searchMatch;
+  });
 
   const rows: MonthGridRow[] = visibleMembers.map((m) => ({
     id: m.id,
@@ -59,7 +66,7 @@ export function MembersGrid({ t }: { t: Dictionary }) {
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
+        <div className="flex items-center gap-2">
           {archivedCount > 0 && (
             <button
               type="button"
@@ -69,6 +76,11 @@ export function MembersGrid({ t }: { t: Dictionary }) {
               {showArchived ? t.hideArchived : `${t.showArchived} (${archivedCount})`}
             </button>
           )}
+          <SearchInput
+            t={t}
+            value={searchQuery}
+            onChange={setSearchQuery}
+          />
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -92,32 +104,38 @@ export function MembersGrid({ t }: { t: Dictionary }) {
           )}
         </div>
       </div>
-      <MonthGrid
-        months={MASJID_GRID_MONTHS}
-        rows={rows}
-        labelHeader={t.members}
-        onLabelClick={(rowId) => {
-          const member = members.find((m) => m.id === rowId) ?? null;
-          setEditingMember(member);
-          setFormOpen(true);
-        }}
-        onCellClick={(rowId, cell, monthKey) => {
-          const member = members.find((m) => m.id === rowId);
-          setContext({
-            rowLabel: member?.fullName ?? rowId,
-            monthLabel:
-              MASJID_GRID_MONTHS.find((m) => m.key === monthKey)?.label ??
-              monthKey,
-            monthKey: monthKey,
-            expectedCents: cell ? cell.expectedCents : (member?.monthlyPledgeCents ?? 1000),
-            currentPaidCents: cell?.paidCents ?? 0,
-            obligationId: cell?.obligationId ?? "",
-            againstType: "pledgeMonth",
-            scope: "masjid",
-            memberId: rowId,
-          });
-        }}
-      />
+      {visibleMembers.length === 0 ? (
+        <div className="rounded-xl border border-nour-gold-300/40 bg-surface py-12 text-center">
+          <p className="text-sm text-muted">{t.emptyState}</p>
+        </div>
+      ) : (
+        <MonthGrid
+          months={MASJID_GRID_MONTHS}
+          rows={rows}
+          labelHeader={t.members}
+          onLabelClick={(rowId) => {
+            const member = members.find((m) => m.id === rowId) ?? null;
+            setEditingMember(member);
+            setFormOpen(true);
+          }}
+          onCellClick={(rowId, cell, monthKey) => {
+            const member = members.find((m) => m.id === rowId);
+            setContext({
+              rowLabel: member?.fullName ?? rowId,
+              monthLabel:
+                MASJID_GRID_MONTHS.find((m) => m.key === monthKey)?.label ??
+                monthKey,
+              monthKey: monthKey,
+              expectedCents: cell ? cell.expectedCents : (member?.monthlyPledgeCents ?? 1000),
+              currentPaidCents: cell?.paidCents ?? 0,
+              obligationId: cell?.obligationId ?? "",
+              againstType: "pledgeMonth",
+              scope: "masjid",
+              memberId: rowId,
+            });
+          }}
+        />
+      )}
       <RecordPaymentDialog
         t={t}
         context={context}

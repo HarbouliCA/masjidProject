@@ -31,6 +31,7 @@ export type MemberStatus = "active" | "lapsed" | "never_paid" | "left";
 
 export interface Member {
   id: string;
+  memberNumber?: number; // Added for Task 2/3
   personId?: string;
   fullName: string;
   monthlyPledgeCents: Cents; // standard amount (default 1000)
