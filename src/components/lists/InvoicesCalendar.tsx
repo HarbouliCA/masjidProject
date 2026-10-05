@@ -23,6 +23,17 @@ export function InvoicesCalendar({ t }: { t: Dictionary }) {
 
   const activeFamilies = families.filter((f) => f.isActive !== false);
 
+  const activeFamilyIds = new Set(activeFamilies.map((f) => f.id));
+  const activeInvoices = invoices.filter((i) => activeFamilyIds.has(i.familyId));
+  const expectedTotalCents = activeFamilies.reduce(
+    (s, f) => s + calculateFamilyFees(f).totalCents,
+    0
+  );
+  const collectedTotalCents = activeInvoices.reduce((s, i) => s + i.paidCents, 0);
+  const monthTotals = SCHOOL_GRID_MONTHS.map(
+    (m) => activeInvoices.filter((i) => i.month === m.key).reduce((s, i) => s + i.paidCents, 0)
+  );
+
   function scrollToMonth(monthKey: string) {
     const container = tableRef.current;
     if (!container) return;
@@ -162,6 +173,31 @@ export function InvoicesCalendar({ t }: { t: Dictionary }) {
               );
             })}
           </tbody>
+          <tfoot>
+            <tr className="border-t border-nour-gold-300/40 bg-nour-gold-300/5">
+              <td className="sticky inset-inline-start-0 bg-surface px-4 py-2 font-bold text-foreground whitespace-nowrap">
+                {t.grandTotal}
+              </td>
+              <td className="px-2 py-2" />
+              <td className="px-2 py-2" />
+              <td className="px-2 py-2" />
+              <td className="px-2 py-2" />
+              <td className="px-2 py-2 text-center font-bold text-foreground bg-nour-gold-300/10">
+                <Money cents={expectedTotalCents} />
+              </td>
+              {SCHOOL_GRID_MONTHS.map((m, idx) => (
+                <td
+                  key={m.key}
+                  className="px-2 py-2 text-center font-bold text-foreground border-s border-nour-gold-300/10"
+                >
+                  {monthTotals[idx] > 0 ? <Money cents={monthTotals[idx]} /> : "—"}
+                </td>
+              ))}
+              <td className="px-4 py-2 text-center font-bold text-foreground bg-nour-gold-300/20">
+                <Money cents={collectedTotalCents} />
+              </td>
+            </tr>
+          </tfoot>
         </table>
       </div>
       <RecordPaymentDialog

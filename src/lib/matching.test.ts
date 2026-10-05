@@ -18,6 +18,13 @@ describe("normalizeName", () => {
     expect(unifyArabic("آمنة")).toBe("امنه");
   });
 
+  it("unifies Maghrebi letters (ڭ→ك, ڨ→ق, ڤ→ف)", () => {
+    expect(unifyArabic("ڭبور")).toBe("كبور");
+    expect(unifyArabic("ڨاسمي")).toBe("قاسمي");
+    expect(unifyArabic("ڤؤاد")).toBe("فواد");
+    expect(normalizeName("هشام بنساڭة")).toBe(normalizeName("هشام بنساكة"));
+  });
+
   it("removes the leading article for matching", () => {
     expect(normalizeName("الميلود قاسمي")).toBe(normalizeName("ميلود قاسمي"));
   });

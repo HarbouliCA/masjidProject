@@ -11,14 +11,18 @@ export function stripTashkeel(value: string): string {
     .replace(/\u0653/g, "");
 }
 
-/** Unify alef/hamza/taa-marbuta/yah variants. */
+/** Unify alef/hamza/taa-marbuta/yah variants + Maghrebi letters. */
 export function unifyArabic(value: string): string {
   return value
-    .replace(/[أإآا]/g, "ا")
+    .replace(/[أإآاٱ]/g, "ا")
     .replace(/ى/g, "ي")
     .replace(/ة/g, "ه")
     .replace(/ؤ/g, "و")
-    .replace(/ئ/g, "ي");
+    .replace(/ئ/g, "ي")
+    // Maghrebi variants (Moroccan names, plan §2.7)
+    .replace(/[ڭگکڳ]/g, "ك")
+    .replace(/[ڨٯ]/g, "ق")
+    .replace(/[ڤڢ]/g, "ف");
 }
 
 /** Normalize a name to a canonical key for matching. */

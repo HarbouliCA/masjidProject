@@ -67,6 +67,8 @@ export const ca: Dictionary = {
   name: "Nom",
   phone: "Telèfon",
   nieDni: "NIE / DNI",
+  memberNumber: "Núm. de membre",
+  memberNumberTaken: "Aquest número ja està en ús",
   level: "Nivell",
   english: "Anglès",
   reserved: "Reservat",

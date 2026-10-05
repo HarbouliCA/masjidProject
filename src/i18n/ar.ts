@@ -69,6 +69,8 @@ export const ar = {
   name: "الاسم",
   phone: "رقم الهاتف",
   nieDni: "NIE / DNI",
+  memberNumber: "رقم العضو",
+  memberNumberTaken: "هذا الرقم مستخدم بالفعل",
   level: "المستوى",
   english: "الإنجليزية",
   reserved: "محجوز",

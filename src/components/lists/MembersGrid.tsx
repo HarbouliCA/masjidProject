@@ -22,17 +22,20 @@ export function MembersGrid({ t }: { t: Dictionary }) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const archivedCount = members.filter((m) => m.isActive === false).length;
-  const visibleMembers = members.filter((m) => {
-    const activeMatch = showArchived ? m.isActive === false : m.isActive !== false;
-    const searchMatch =
-      matchesSearch(searchQuery, m.fullName) ||
-      (m.memberNumber && m.memberNumber.toString().includes(searchQuery.trim()));
-    return activeMatch && searchMatch;
-  });
+  const visibleMembers = members
+    .filter((m) => {
+      const activeMatch = showArchived ? m.isActive === false : m.isActive !== false;
+      const searchMatch =
+        matchesSearch(searchQuery, m.fullName) ||
+        (m.memberNumber && m.memberNumber.toString().includes(searchQuery.trim()));
+      return activeMatch && searchMatch;
+    })
+    .sort((a, b) => (a.memberNumber ?? Infinity) - (b.memberNumber ?? Infinity));
 
   const rows: MonthGridRow[] = visibleMembers.map((m) => ({
     id: m.id,
     label: m.fullName + (m.isActive === false ? ` (${t.archived})` : ""),
+    number: m.memberNumber != null ? String(m.memberNumber) : undefined,
     hint: memberHint(m),
     cells: pledgeMonths
       .filter((p) => p.memberId === m.id)
@@ -52,8 +55,9 @@ export function MembersGrid({ t }: { t: Dictionary }) {
   }
 
   function exportGrid() {
-    const header = [t.name, ...MASJID_GRID_MONTHS.map((m) => m.label)];
+    const header = [t.memberNumber, t.name, ...MASJID_GRID_MONTHS.map((m) => m.label)];
     const body = visibleMembers.map((m) => [
+      m.memberNumber != null ? String(m.memberNumber) : "",
       m.fullName,
       ...MASJID_GRID_MONTHS.map((gm) => {
         const pm = pledgeMonths.find((p) => p.memberId === m.id && p.month === gm.key);
@@ -113,6 +117,7 @@ export function MembersGrid({ t }: { t: Dictionary }) {
           months={MASJID_GRID_MONTHS}
           rows={rows}
           labelHeader={t.members}
+          numberHeader={t.memberNumber}
           onLabelClick={(rowId) => {
             const member = members.find((m) => m.id === rowId) ?? null;
             setEditingMember(member);

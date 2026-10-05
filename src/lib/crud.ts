@@ -31,6 +31,7 @@ import type {
 export interface MemberInput {
   fullName: string;
   monthlyPledgeCents: Cents;
+  memberNumber?: number;
   startMonth?: string;
   phone?: string;
   nie?: string;
@@ -42,9 +43,13 @@ export function buildMember(input: MemberInput): Omit<Member, "id"> {
   if (!Number.isInteger(input.monthlyPledgeCents) || input.monthlyPledgeCents <= 0) {
     throw new Error("monthly pledge must be a positive integer (cents)");
   }
+  if (input.memberNumber !== undefined && (!Number.isInteger(input.memberNumber) || input.memberNumber <= 0)) {
+    throw new Error("member number must be a positive integer");
+  }
   return {
     fullName: input.fullName.trim(),
     monthlyPledgeCents: input.monthlyPledgeCents,
+    memberNumber: input.memberNumber,
     startMonth: input.startMonth ?? "2026-01",
     status: "never_paid",
     phone: input.phone?.trim() || undefined,

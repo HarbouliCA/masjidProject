@@ -35,6 +35,17 @@ describe("buildMember", () => {
     expect(m.phone).toBe("612000000");
     expect(m.nie).toBe("X1234567Z");
   });
+
+  it("keeps memberNumber when provided", () => {
+    const m = buildMember({ fullName: "محمد", monthlyPledgeCents: 1000, memberNumber: 7 });
+    expect(m.memberNumber).toBe(7);
+  });
+
+  it("rejects a non-positive memberNumber", () => {
+    expect(() =>
+      buildMember({ fullName: "x", monthlyPledgeCents: 1000, memberNumber: 0 })
+    ).toThrow();
+  });
 });
 
 describe("buildFamily", () => {

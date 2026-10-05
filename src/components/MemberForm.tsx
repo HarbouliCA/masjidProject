@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { deleteField } from "firebase/firestore";
+import { useMembers } from "@/lib/data/hooks";
 import { recordMember, updateMember, archiveMember, unarchiveMember, deleteMemberPermanent } from "@/lib/crud";
 import { Field, inputClass, buttonClass, ghostButtonClass } from "./forms/shared";
 import { useSubmit } from "./forms/useSubmit";
@@ -20,35 +21,50 @@ export function MemberForm({
   member: Member | null;
   onClose: () => void;
 }) {
+  const { data: members = [] } = useMembers();
   const [fullName, setFullName] = useState("");
   const [pledge, setPledge] = useState("10");
+  const [memberNumber, setMemberNumber] = useState("");
   const [phone, setPhone] = useState("");
   const [nie, setNie] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { busy, error, saved, runAndInvalidate } = useSubmit();
 
+  const nextMemberNumber = useMemo(
+    () => members.reduce((m, x) => Math.max(m, x.memberNumber ?? 0), 0) + 1,
+    [members]
+  );
+
   useEffect(() => {
     if (open) {
       setFullName(member?.fullName ?? "");
       setPledge(member ? (member.monthlyPledgeCents / 100).toString() : "10");
+      setMemberNumber(
+        member?.memberNumber ? String(member.memberNumber) : String(nextMemberNumber)
+      );
       setPhone(member?.phone ?? "");
       setNie(member?.nie ?? "");
       setConfirmOpen(false);
       setDeleteOpen(false);
     }
-  }, [open, member]);
+  }, [open, member, nextMemberNumber]);
 
   if (!open) return null;
 
   async function submit() {
     const cents = Math.round(Number(pledge) * 100);
+    const num = Number(memberNumber);
     if (!fullName.trim() || !Number.isFinite(cents) || cents <= 0) return;
+    if (!Number.isInteger(num) || num <= 0) return;
     await runAndInvalidate(async () => {
+      const taken = members.some((m) => m.memberNumber === num && m.id !== member?.id);
+      if (taken) throw new Error(t.memberNumberTaken);
       if (member) {
         await updateMember(member.id, {
           fullName: fullName.trim(),
           monthlyPledgeCents: cents,
+          memberNumber: num,
           phone: phone.trim() || deleteField(),
           nie: nie.trim() || deleteField(),
         });
@@ -56,6 +72,7 @@ export function MemberForm({
         await recordMember({
           fullName: fullName.trim(),
           monthlyPledgeCents: cents,
+          memberNumber: num,
           phone: phone.trim() || undefined,
           nie: nie.trim() || undefined,
         });
@@ -117,6 +134,16 @@ export function MemberForm({
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label={t.memberNumber}>
+              <input
+                dir="ltr"
+                inputMode="numeric"
+                required
+                value={memberNumber}
+                onChange={(e) => setMemberNumber(e.target.value)}
                 className={inputClass}
               />
             </Field>
@@ -185,7 +212,12 @@ export function MemberForm({
             <button
               type="button"
               onClick={submit}
-              disabled={busy || !fullName.trim()}
+              disabled={
+                busy ||
+                !fullName.trim() ||
+                !Number.isInteger(Number(memberNumber)) ||
+                Number(memberNumber) <= 0
+              }
               className={buttonClass}
             >
               {busy ? t.saving : t.save}

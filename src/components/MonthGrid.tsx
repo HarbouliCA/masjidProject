@@ -13,6 +13,7 @@ export interface MonthCell {
 export interface MonthGridRow {
   id: string;
   label: string;
+  number?: string;
   hint?: string;
   cells: MonthCell[];
 }
@@ -34,21 +35,31 @@ export function MonthGrid({
   months,
   rows,
   labelHeader,
+  numberHeader,
   onCellClick,
   onLabelClick,
 }: {
   months: { key: string; label: string }[];
   rows: MonthGridRow[];
   labelHeader: string;
+  numberHeader?: string;
   onCellClick?: (rowId: string, cell: MonthCell | null, monthKey: string) => void;
   onLabelClick?: (rowId: string) => void;
 }) {
+  const showNumber = Boolean(numberHeader);
+  const labelStart = showNumber ? "inset-inline-start-20" : "inset-inline-start-0";
+
   return (
     <div className="overflow-x-auto rounded-xl border border-nour-gold-300/40 bg-surface">
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="border-b border-nour-gold-300/40">
-            <th className="sticky inset-inline-start-0 bg-surface px-4 py-3 text-start font-medium text-nour-stone-400">
+            {showNumber && (
+              <th className="sticky inset-inline-start-0 w-20 bg-surface px-2 py-3 text-center font-medium text-nour-stone-400 whitespace-nowrap">
+                {numberHeader}
+              </th>
+            )}
+            <th className={`sticky ${labelStart} bg-surface px-4 py-3 text-start font-medium text-nour-stone-400`}>
               {labelHeader}
             </th>
             {months.map((m) => (
@@ -67,7 +78,12 @@ export function MonthGrid({
               key={row.id}
               className="border-b border-nour-gold-300/20 last:border-0"
             >
-              <td className="sticky inset-inline-start-0 bg-surface px-4 py-2 font-medium">
+              {showNumber && (
+                <td className="sticky inset-inline-start-0 w-20 bg-surface px-2 py-2 text-center tabular-nums text-nour-stone-400">
+                  {row.number ?? "—"}
+                </td>
+              )}
+              <td className={`sticky ${labelStart} bg-surface px-4 py-2 font-medium`}>
                 {onLabelClick ? (
                   <button
                     type="button"
